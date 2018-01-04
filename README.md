@@ -35,6 +35,10 @@ Will create pkg/pkg.etc.go:
 ```go
 package pkg
 
+import (
+	"github.com/superp00t/etc"
+)
+
 type ExampleData struct {
 	Time_ms     uint64    `json:"time_ms"`
 	Coordinates []float32 `json:"coordinates"`
