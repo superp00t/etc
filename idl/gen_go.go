@@ -6,7 +6,16 @@ import (
 )
 
 func (s *Syntax) GenerateGo() string {
-	src := fmt.Sprintf("package %s\n\n", s.PackageName)
+	imports := []string{
+		"github.com/superp00t/etc",
+	}
+
+	src := fmt.Sprintf("package %s\n\nimport (\n", s.PackageName)
+	for _, v := range imports {
+		src += "\t\"" + v + "\"\n"
+	}
+	src += ")\n"
+
 	encS := ""
 	encodeS := ""
 
