@@ -54,11 +54,11 @@ func (b *Buffer) ReadBigUint64() uint64 {
 }
 
 func (b *Buffer) ReadBigUint32() uint32 {
-	return binary.LittleEndian.Uint32(b.ReadBytes(4))
+	return binary.BigEndian.Uint32(b.ReadBytes(4))
 }
 
 func (b *Buffer) ReadBigUint16() uint16 {
-	return binary.LittleEndian.Uint16(b.ReadBytes(2))
+	return binary.BigEndian.Uint16(b.ReadBytes(2))
 }
 
 /* Floats */
