@@ -6,7 +6,18 @@ import (
 	"math"
 )
 
+func (b *Buffer) SeekW(offset int) {
+	b.wpos = offset
+}
+
+func (b *Buffer) SeekR(offset int) {
+	b.rpos = offset
+}
+
 func (b *Buffer) ReadByte() uint8 {
+	if b.rpos > len(b.buf) {
+		return 0
+	}
 	i := b.buf[b.rpos]
 	b.rpos++
 	return i
