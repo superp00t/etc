@@ -14,6 +14,14 @@ func (b *Buffer) SeekR(offset int) {
 	b.rpos = offset
 }
 
+func (b *Buffer) Rpos() int {
+	return b.rpos
+}
+
+func (b *Buffer) Wpos() int {
+	return b.rpos
+}
+
 func (b *Buffer) ReadByte() uint8 {
 	if b.rpos > len(b.buf) {
 		return 0
@@ -24,7 +32,7 @@ func (b *Buffer) ReadByte() uint8 {
 }
 
 func (b *Buffer) Len() int {
-	return len(b.buf)
+	return b.wpos
 }
 
 func (b *Buffer) Read(buf []byte) (int, error) {
