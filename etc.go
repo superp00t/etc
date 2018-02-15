@@ -30,7 +30,9 @@ func (b *Buffer) Bytes() []byte {
 }
 
 func (b *Buffer) Sha512Digest() []byte {
-	return sha512.New().Sum(b.Bytes())
+	h := sha512.New()
+	h.Write(b.Bytes())
+	return h.Sum(nil)
 }
 
 func ZlibCompress(input []byte) []byte {
