@@ -6,6 +6,10 @@ import (
 	"math"
 )
 
+func (b *Buffer) String() string {
+	return string(b.Bytes())
+}
+
 func (b *Buffer) SeekW(offset int) {
 	b.wpos = offset
 }
@@ -23,7 +27,7 @@ func (b *Buffer) Wpos() int {
 }
 
 func (b *Buffer) ReadByte() uint8 {
-	if b.rpos > len(b.buf) {
+	if b.rpos > len(b.buf)-1 {
 		return 0
 	}
 	i := b.buf[b.rpos]
@@ -93,17 +97,25 @@ func (b *Buffer) ReadFloat64() float64 {
 	return bits
 }
 
-func (b *Buffer) ReadCString() string {
+func (b *Buffer) ReadString(delimiter byte) string {
 	var i []byte
 	for {
 		c := b.ReadByte()
 		if c == 0 {
 			break
 		}
+
+		if c == delimiter {
+			break
+		}
 		i = append(i, c)
 	}
 
 	return string(i)
+}
+
+func (b *Buffer) ReadCString() string {
+	return b.ReadString(0)
 }
 
 func (b *Buffer) ReadLimitedBytes() []byte {
