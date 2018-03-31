@@ -18,6 +18,9 @@ const (
 	Mfloat32
 	Mfloat64
 	Mstruct
+	Muuid
+	Mint
+	Muint
 	McheckLater
 )
 
@@ -47,6 +50,12 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 		return mkspec(Mbytes)
 	case "float32":
 		return mkspec(Mfloat32)
+	case "uuid":
+		return mkspec(Muuid)
+	case "int":
+		return mkspec(Mint)
+	case "uint":
+		return mkspec(Muint)
 	case "float64":
 		return mkspec(Mfloat64)
 	default:

@@ -18,16 +18,17 @@ func (s *Syntax) GenerateGo() string {
 
 	encS := ""
 	encodeS := ""
-
+	jsun := ""
 	for k, v := range s.MessageTypes {
 		sname := goNormalizeExportField(k)
 		// generate decoder
+		jsun += fmt.Sprintf("func (v *%s) Stringify() string {\n\tb, _ := json.Marshal(v)\n\treturn string(b)\n}", sname)
 		encodeS += "func (v *" + sname + ") Marshal() []byte {\n\td := etc.NewBuffer()\n"
 		encS += "func Unmarshal" + sname + "(data []byte) (*" + sname + ", error) {\n"
 		if s.Pragmas["zlib-compress"] == true {
 			encS += "\tvar err error\n\tinput, err := etc.ZlibDecompress(data)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\t"
 		} else {
-			encS += "\tinput := data\n"
+			encS += "\tvar err error\n\tinput := data\n"
 		}
 
 		encS += "\tv := new(" + sname + ")\n\td := etc.MkBuffer(input)\n"
@@ -44,12 +45,12 @@ func (s *Syntax) GenerateGo() string {
 
 			encName := "v." + fname
 			if field.ArrayType {
-				encodeS += "\td.WriteUint32(uint32(len(v." + fname + ")))\n"
+				encodeS += "\td.Write_LEB128_Uint(uint64(len(v." + fname + ")))\n"
 				encodeS += "\tfor _i := 0; _i < len(v." + fname + "); _i++ {\n\t\te := v." + fname + "[_i]\n\t"
 				encName = "e"
 
 				l := "ln_" + fname
-				encS += "\t" + l + " := int(d.ReadUint32())\n\tfor _i := 0; _i < " + l + "; _i++ {\n\t"
+				encS += "\t" + l + " := int(d.Read_LEB128_Uint())\n\tfor _i := 0; _i < " + l + "; _i++ {\n\t"
 			}
 
 			if field.Type == Mstruct {
@@ -86,10 +87,9 @@ func (s *Syntax) GenerateGo() string {
 		encodeS += "\t" + returnArg + "\n}\n\n"
 		encS += "\treturn v, err\n}\n\n"
 		src += fmt.Sprintf("}\n\n")
-
 	}
 
-	return src + encS + encodeS
+	return src + encS + encodeS + jsun
 }
 
 func goType(m *SpecType) string {
@@ -106,6 +106,12 @@ func goType(m *SpecType) string {
 		return "uint64"
 	case Muint8:
 		return "uint8"
+	case Muuid:
+		return "etc.UUID"
+	case Mint:
+		return "int64"
+	case Muint:
+		return "uint64"
 	case Mfloat32:
 		return "float32"
 	case Mfloat64:
@@ -131,10 +137,16 @@ func goWriteFunc(m *SpecType, fname string) string {
 		return fmt.Sprintf("d.WriteUint64(%s)", fname)
 	case Muint8:
 		return fmt.Sprintf("d.WriteByte(%s)", fname)
+	case Muuid:
+		return fmt.Sprintf("d.WriteUUID(%s)", fname)
 	case Mfloat32:
 		return fmt.Sprintf("d.WriteFloat32(%s)", fname)
 	case Mfloat64:
 		return fmt.Sprintf("d.WriteFloat64(%s)", fname)
+	case Mint:
+		return fmt.Sprintf("d.Write_LEB_Int(%s)", fname)
+	case Muint:
+		return fmt.Sprintf("d.Write_LEB_Uint(%s)", fname)
 	case Mstruct:
 		return "/* NOT YET IMPLEMENTED */"
 	default:
@@ -160,6 +172,12 @@ func goReadFunc(m *SpecType) string {
 		return "d.ReadFloat32()"
 	case Mfloat64:
 		return "d.ReadFloat64()"
+	case Mint:
+		return "d.Read_LEB128_Int()"
+	case Muint:
+		return "d.Read_LEB128_Uint()"
+	case Muuid:
+		return "d.ReadUUID()"
 	case Mstruct:
 		return "/* NOT YET IMPLEMENTED */"
 	default:

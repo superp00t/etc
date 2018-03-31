@@ -1,7 +1,9 @@
 package etc
 
 import (
+	"crypto/rand"
 	"encoding/binary"
+	"io"
 	"math"
 )
 
@@ -22,6 +24,31 @@ func (b *Buffer) Write(buf []byte) (int, error) {
 		b.WriteByte(v)
 	}
 	return len(buf), nil
+}
+
+func (b *Buffer) WriteInt16(v int16) {
+	b.WriteUint16(uint16(v))
+}
+
+func (b *Buffer) WriteInt32(v int32) {
+	b.WriteUint32(uint32(v))
+}
+
+func (b *Buffer) WriteInt64(v int64) {
+	b.WriteUint64(uint64(v))
+}
+
+/* WARNING: Big refers to Big-endian, not as in BigInteger. */
+func (b *Buffer) WriteBigInt16(v int16) {
+	b.WriteBigUint16(uint16(v))
+}
+
+func (b *Buffer) WriteBigInt32(v int32) {
+	b.WriteBigUint32(uint32(v))
+}
+
+func (b *Buffer) WriteBigInt64(v int64) {
+	b.WriteBigUint64(uint64(v))
 }
 
 func (b *Buffer) WriteUint16(v uint16) {
@@ -65,7 +92,7 @@ func (b *Buffer) WriteCString(v string) {
 }
 
 func (b *Buffer) WriteLimitedBytes(bf []byte) {
-	b.WriteUint32(uint32(len(bf)))
+	b.Write_LEB128_Uint(uint64(len(bf)))
 	b.Write(bf)
 }
 
@@ -75,4 +102,22 @@ func (b *Buffer) WriteFloat32(v float32) {
 
 func (b *Buffer) WriteFloat64(v float64) {
 	b.WriteUint64(math.Float64bits(v))
+}
+
+func (b *Buffer) WriteRandom(i int) {
+	by := make([]byte, i)
+	_, err := io.ReadFull(rand.Reader, by)
+	if err != nil {
+		panic(err)
+	}
+
+	b.Write(by)
+}
+
+func (b *Buffer) Write_LEB128_Uints(v []uint64) {
+	b.Write(Leb128Encode(v))
+}
+
+func (b *Buffer) Write_LEB128_Uint(v uint64) {
+	b.Write(Leb128Encode([]uint64{v}))
 }

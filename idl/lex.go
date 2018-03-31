@@ -10,11 +10,13 @@ const (
 	TStruct
 	TOpenBracket
 	TCloseBracket
+	TServer
 )
 
 var KwMap = map[string]Token{
 	"struct":  TStruct,
 	"#pragma": TPragma,
+	"server":  TServer,
 	"{":       TOpenBracket,
 	"}":       TCloseBracket,
 }

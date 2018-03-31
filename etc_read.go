@@ -59,6 +59,30 @@ func (b *Buffer) ReadBytes(ln int) []byte {
 }
 
 /* Integer functions */
+func (b *Buffer) ReadInt64() int64 {
+	return int64(b.ReadUint64())
+}
+
+func (b *Buffer) ReadInt32() int32 {
+	return int32(b.ReadUint32())
+}
+
+func (b *Buffer) ReadInt16() int16 {
+	return int16(b.ReadUint16())
+}
+
+/* WARNING: Big refers to Big-endian, not as in BigInteger. */
+func (b *Buffer) ReadBigInt64() int64 {
+	return int64(b.ReadBigUint64())
+}
+
+func (b *Buffer) ReadBigInt32() int32 {
+	return int32(b.ReadBigUint32())
+}
+
+func (b *Buffer) ReadBigInt16() int16 {
+	return int16(b.ReadBigUint16())
+}
 
 func (b *Buffer) ReadUint64() uint64 {
 	return binary.LittleEndian.Uint64(b.ReadBytes(8))
@@ -119,6 +143,20 @@ func (b *Buffer) ReadCString() string {
 }
 
 func (b *Buffer) ReadLimitedBytes() []byte {
-	ln := b.ReadUint32()
+	ln := b.Read_LEB128_Uint()
 	return b.ReadBytes(int(ln))
+}
+
+func (b *Buffer) Read_LEB128_Uints(ct int) []uint64 {
+	x, ints := Leb128Decode(ct, b.buf[b.rpos:])
+	b.rpos += x
+	return ints
+}
+
+func (b *Buffer) Read_LEB128_Uint() uint64 {
+	return b.Read_LEB128_Uints(1)[0]
+}
+
+func (b *Buffer) Read_LEB128_Int() int64 {
+	return int64(b.Read_LEB128_Uint())
 }

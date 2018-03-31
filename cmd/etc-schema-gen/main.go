@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/superp00t/etc"
+
 	"io/ioutil"
 	"os"
 	"strings"
@@ -57,8 +59,12 @@ func compile(in, pkgName, out string) {
 
 	ioutil.WriteFile(out, []byte(st), 0700)
 
-	c := exec.Command("gofmt", "-w", out).Run()
+	mc := exec.Command("gofmt", "-w", out)
+	ot := etc.NewBuffer()
+	mc.Stdout = ot
+	mc.Stderr = ot
+	c := mc.Run()
 	if c != nil {
-		fatalf("%s", c)
+		fatalf("%s (%s)", c, ot)
 	}
 }
