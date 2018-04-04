@@ -1,8 +1,16 @@
-// Use compression (optional)
-// #pragma zlib-compress
+# Use compression (optional)
+# 
+# use zlib-compress
 
 struct exampleData {
   uint64      time_ms
   uuid        id
+  uint        randomthing
+  bigint      value
   float32     coordinates[]
+}
+
+rpc exampleRPC {
+  getData() -> exampleData
+  uploadData(exampleData) -> void
 }

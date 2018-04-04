@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strings"
 )
 
@@ -12,6 +13,10 @@ type UUID [2]uint64
 var UUID_NULL UUID = UUID{
 	0x0000000000000000,
 	0x0000000000000000,
+}
+
+func (g UUID) Big() *big.Int {
+	return big.NewInt(0).SetBytes(g.Bytes())
 }
 
 func (g UUID) MarshalJSON() ([]byte, error) {
@@ -37,17 +42,21 @@ func (g UUID) UnmarshalJSON(b []byte) error {
 }
 
 func (e *Buffer) WriteUUID(g UUID) {
-	e.Write_LEB128_Uints(g[:])
+	e.EncodeUnsignedVarint(g.Big())
 }
 
 func (e *Buffer) ReadUUID() UUID {
-	us := e.Read_LEB128_Uints(2)
-	var g [2]uint64
-	if len(us) != 2 {
+	ud := e.DecodeUnsignedVarint(20)
+	de := ud.Bytes()
+	if len(de) != 16 {
 		return UUID_NULL
 	}
 
-	copy(g[:], us)
+	g := UUID{
+		binary.BigEndian.Uint64(de[0:8]),
+		binary.BigEndian.Uint64(de[8:16]),
+	}
+
 	return g
 }
 

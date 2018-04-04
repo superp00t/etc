@@ -33,7 +33,7 @@ func main() {
 	}
 
 	if *goOut != "" {
-		compile(srcFile, *pkg, *goOut+"/"+*pkg+".etc.go")
+		compile(srcFile, *pkg, *goOut+"/"+*pkg)
 	}
 }
 
@@ -55,10 +55,23 @@ func compile(in, pkgName, out string) {
 
 	t.PackageName = pkgName
 
-	st := t.GenerateGo()
+	st, rpc := t.GenerateGo()
 
-	ioutil.WriteFile(out, []byte(st), 0700)
+	out1 := out + ".etc.go"
+	out2 := out + "-rpc.go"
 
+	ioutil.WriteFile(out1, []byte(st), 0700)
+	gofmt(out1)
+
+	if !exists(out2) {
+		if rpc != "" {
+			ioutil.WriteFile(out2, []byte(rpc), 0700)
+			gofmt(out2)
+		}
+	}
+}
+
+func gofmt(out string) {
 	mc := exec.Command("gofmt", "-w", out)
 	ot := etc.NewBuffer()
 	mc.Stdout = ot
@@ -67,4 +80,12 @@ func compile(in, pkgName, out string) {
 	if c != nil {
 		fatalf("%s (%s)", c, ot)
 	}
+}
+
+func exists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	}
+
+	return false
 }

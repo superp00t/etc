@@ -19,6 +19,10 @@ func NewBuffer() *Buffer {
 	}
 }
 
+func FromString(b string) *Buffer {
+	return MkBuffer([]byte(b))
+}
+
 func MkBuffer(b []byte) *Buffer {
 	bf := NewBuffer()
 	bf.Write(b)

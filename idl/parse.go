@@ -19,6 +19,7 @@ const (
 	Mfloat64
 	Mstruct
 	Muuid
+	Mbigint
 	Mint
 	Muint
 	McheckLater
@@ -56,6 +57,8 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 		return mkspec(Mint)
 	case "uint":
 		return mkspec(Muint)
+	case "bigint":
+		return mkspec(Mbigint)
 	case "float64":
 		return mkspec(Mfloat64)
 	default:
@@ -75,11 +78,23 @@ type SpecType struct {
 	Ln, Col int
 }
 
+type RPC_Service struct {
+	Procs map[string]*RPC_Proc
+}
+
+type RPC_Proc struct {
+	Name         string
+	RequestType  string
+	ResponseType string
+}
+
 type Syntax struct {
 	PackageName string
 
 	Pragmas      map[string]bool
 	MessageTypes map[string]*SpecType
+
+	RPC map[string]*RPC_Service
 }
 
 func (s *Syntax) FixUnknownTypes() error {
@@ -101,6 +116,7 @@ func (s *Syntax) FixUnknownTypes() error {
 func ParseTokens(tokens []*TokenPos) (*Syntax, error) {
 	s := &Syntax{}
 	s.Pragmas = make(map[string]bool)
+	s.RPC = make(map[string]*RPC_Service)
 	s.MessageTypes = make(map[string]*SpecType)
 
 	for i := 0; i < len(tokens); {
@@ -116,6 +132,75 @@ func ParseTokens(tokens []*TokenPos) (*Syntax, error) {
 
 			s.Pragmas[ta.S] = true
 			i += 2
+			continue
+		}
+
+		if tk.T == TRPC {
+			rpc := new(RPC_Service)
+			rpc.Procs = make(map[string]*RPC_Proc)
+			rnm := ""
+
+			if len(tokens) < i+2 {
+				return nil, fmt.Errorf("(%d, %d) Error parsing struct, unexpected EOF", tk.Ln, tk.Col)
+			}
+
+			rnm = tokens[i+1].S
+			s.RPC[rnm] = rpc
+
+			if tokens[i+2].T != TOpenBracket {
+				return nil, fmt.Errorf("(%d, %d) Error parsing rpc, expected open bracket", tk.Ln, tk.Col)
+			}
+
+			i += 3
+
+			for {
+				tk = tokens[i]
+				if tk.T == TCloseBracket {
+					i++
+					break
+				}
+
+				if tk.T == TName {
+					if !strings.Contains(tk.S, "(") && !strings.Contains(tk.S, ")") {
+						return nil, fmt.Errorf("(%d, %d) Error parsing rpc, needs function", tk.Ln, tk.Col)
+					}
+
+					nm := []rune(tk.S)
+					rrn := nm[len(nm)-1:][0]
+					if rrn != ')' {
+						return nil, fmt.Errorf("(%d, %d) Error parsing rpc, needs function parentheses (%c)", tk.Ln, tk.Col, rrn)
+					}
+
+					funcNameS := strings.Split(tk.S, "(")
+					funcName := funcNameS[0]
+
+					centerTypeS := strings.Split(funcNameS[1], ")")
+					centerType := centerTypeS[0]
+					if centerType == "" {
+						centerType = "void"
+					}
+
+					i++
+					tk = tokens[i]
+					if tk.T != TReturns {
+						return nil, fmt.Errorf("(%d, %d) Error parsing rpc, needs function return ->", tk.Ln, tk.Col)
+					}
+					i++
+					tk = tokens[i]
+					if tk.T != TName {
+						return nil, fmt.Errorf("(%d, %d) Error parsing rpc, needs function return ->", tk.Ln, tk.Col)
+					}
+
+					returnType := tk.S
+
+					rpc.Procs[funcName] = &RPC_Proc{
+						funcName,
+						centerType,
+						returnType,
+					}
+					i++
+				}
+			}
 			continue
 		}
 

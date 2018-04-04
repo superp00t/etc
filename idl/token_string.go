@@ -4,9 +4,9 @@ package idl
 
 import "fmt"
 
-const _Token_name = "TNameTNewlineTPragmaTStructTOpenBracketTCloseBracket"
+const _Token_name = "TNameTNewlineTPragmaTStructTOpenBracketTCloseBracketTRPCTReturns"
 
-var _Token_index = [...]uint8{0, 5, 13, 20, 27, 39, 52}
+var _Token_index = [...]uint8{0, 5, 13, 20, 27, 39, 52, 56, 64}
 
 func (i Token) String() string {
 	if i < 0 || i >= Token(len(_Token_index)-1) {

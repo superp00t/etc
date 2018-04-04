@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
+	"math/big"
 )
 
 const (
@@ -92,7 +93,7 @@ func (b *Buffer) WriteCString(v string) {
 }
 
 func (b *Buffer) WriteLimitedBytes(bf []byte) {
-	b.Write_LEB128_Uint(uint64(len(bf)))
+	b.WriteUint(uint64(len(bf)))
 	b.Write(bf)
 }
 
@@ -114,10 +115,14 @@ func (b *Buffer) WriteRandom(i int) {
 	b.Write(by)
 }
 
-func (b *Buffer) Write_LEB128_Uints(v []uint64) {
-	b.Write(Leb128Encode(v))
+func (b *Buffer) WriteUint(v uint64) {
+	b.EncodeUnsignedVarint(big.NewInt(int64(v)))
 }
 
-func (b *Buffer) Write_LEB128_Uint(v uint64) {
-	b.Write(Leb128Encode([]uint64{v}))
+func (b *Buffer) WriteInt(v int64) {
+	b.EncodeSignedVarint(big.NewInt(v))
+}
+
+func (b *Buffer) WriteBigInt(v *big.Int) {
+	b.EncodeSignedVarint(v)
 }

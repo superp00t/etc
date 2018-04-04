@@ -4,7 +4,39 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
+	"math/big"
+	"unicode/utf8"
 )
+
+func (b *Buffer) Runes() []rune {
+	return []rune(b.String())
+}
+
+func (b *Buffer) ReadRune() (rune, int, error) {
+	if b.Available() <= 0 {
+		return 0, 0, io.EOF
+	}
+
+	c := b.buf[b.rpos]
+	if c < utf8.RuneSelf {
+		b.rpos++
+		return rune(c), 1, nil
+	}
+	r, n := utf8.DecodeRune(b.buf[b.wpos:])
+	b.rpos += n
+
+	return r, n, nil
+}
+
+func (b *Buffer) WriteRune(r rune) {
+	buf := make([]byte, 8)
+	n := utf8.EncodeRune(buf, r)
+	b.Write(buf[:n])
+}
+
+func (b *Buffer) Available() int {
+	return b.Len() - b.rpos
+}
 
 func (b *Buffer) String() string {
 	return string(b.Bytes())
@@ -23,7 +55,7 @@ func (b *Buffer) Rpos() int {
 }
 
 func (b *Buffer) Wpos() int {
-	return b.rpos
+	return b.wpos
 }
 
 func (b *Buffer) ReadByte() uint8 {
@@ -138,25 +170,41 @@ func (b *Buffer) ReadString(delimiter byte) string {
 	return string(i)
 }
 
+func (b *Buffer) ReadStringUntil(delimiter rune) string {
+	var i []rune
+	for {
+		c, _, err := b.ReadRune()
+		if err != nil {
+			break
+		}
+
+		if c == delimiter {
+			break
+		}
+
+		i = append(i, c)
+	}
+
+	return string(i)
+}
+
 func (b *Buffer) ReadCString() string {
 	return b.ReadString(0)
 }
 
 func (b *Buffer) ReadLimitedBytes() []byte {
-	ln := b.Read_LEB128_Uint()
+	ln := b.ReadUint()
 	return b.ReadBytes(int(ln))
 }
 
-func (b *Buffer) Read_LEB128_Uints(ct int) []uint64 {
-	x, ints := Leb128Decode(ct, b.buf[b.rpos:])
-	b.rpos += x
-	return ints
+func (b *Buffer) ReadUint() uint64 {
+	return b.DecodeUnsignedVarint(16).Uint64()
 }
 
-func (b *Buffer) Read_LEB128_Uint() uint64 {
-	return b.Read_LEB128_Uints(1)[0]
+func (b *Buffer) ReadInt() int64 {
+	return b.DecodeSignedVarint(16).Int64()
 }
 
-func (b *Buffer) Read_LEB128_Int() int64 {
-	return int64(b.Read_LEB128_Uint())
+func (b *Buffer) ReadBigInt() *big.Int {
+	return b.DecodeSignedVarint(-1)
 }
