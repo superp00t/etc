@@ -20,20 +20,20 @@ You can define data structures with EtcSchema and make RPC request functions.
 # use zlib-compress
 
 struct exampleData {
-  uint64      time_ms
-  uuid        id
-  float32     coordinates[]
+ uint64      time_ms
+ uuid        id
+ float32     coordinates[] # array type
 }
 
 rpc exampleRPC {
-	requestData(void) -> exampleData
-	postData(exampleData) -> void # use void to declare empty requests and responses
+ requestData(void)     -> exampleData
+ postData(exampleData) -> void # use void to declare empty requests and responses
 }
 ```
 
 ## Things to be aware of:
 
-- In EtcSchema, the types `int` and `uint` are 64-bit integer types, but using variable length encoding (LEB128). For fixed bit length encoding, use types with the length in the name, e.g. `uint16`. However, this is not recommended as signed ints are not supported this way. For true, variable-length integers, use the `bigint` type.
+- In EtcSchema, the types `int` and `uint` are 64-bit integer types, but using variable length encoding (LEB128). For fixed bit length encoding, use types with the length in the name, e.g. `uint16`. However, this is not recommended as only unsigned ints are supported. For unlimited-length integers, use the `bigint` type.
 
 ## Coming soon™
 
