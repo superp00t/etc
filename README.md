@@ -1,10 +1,10 @@
 # Etc: Efficient Transfer Coding
 
-Etc is an encoding system. You can write manual encoding functions with it, or you can use my format language called EtcSchema.
+Etc is an encoding format. You can use its encoding functions manually, or you can use the format description language I call EtcSchema.
 
-EtcSchema draws heavy inspiration from Google's Protocol Buffers & gRPC. It uses an offset-based system, in lieu of syntax: you just read one type, and move on to the next. The tokenization of data relies on types remaining a fixed size, or having some kind of termination header: for example, with C strings, you write a string and append a NULL character to the end. With an LEB128 integer, it is terminated by the eigth bit.
+EtcSchema draws heavy inspiration from Google's Protocol Buffers & gRPC. It uses a sequential encoding and decoding system, in lieu of textual syntax: you just read/write one type, and then move on to the next. 
 
-Etc is definitely unstable and **NOT** production ready, so proceed with caution.
+*Etc is unstable and **not** production ready, so proceed with caution.*
 
 `etc.Buffer` is similar to `bytes.Buffer`, but with number and string methods so you don't have to manually type in `encoding/binary` functions.
 
@@ -20,9 +20,9 @@ You can define data structures with EtcSchema and make RPC request functions.
 # use zlib-compress
 
 struct exampleData {
- uint64      time_ms
- uuid        id
- float32     coordinates[] # array type
+ uint64   time_ms
+ uuid     id
+ float32  coordinates[] # dynamic array type
 }
 
 rpc exampleRPC {
