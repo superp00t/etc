@@ -6,6 +6,8 @@ import (
 	"math"
 	"math/big"
 	"unicode/utf8"
+
+	"golang.org/x/text/encoding/unicode"
 )
 
 func (b *Buffer) Runes() []rune {
@@ -82,6 +84,16 @@ func (b *Buffer) Read(buf []byte) (int, error) {
 		rd++
 	}
 	return rd, nil
+}
+
+func (b *Buffer) ReadWChar(ln int) string {
+	dec := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
+	out, err := dec.Bytes(b.ReadBytes(ln))
+	if err != nil {
+		return ""
+	}
+
+	return string(out)
 }
 
 func (b *Buffer) ReadBytes(ln int) []byte {
@@ -207,4 +219,14 @@ func (b *Buffer) ReadInt() int64 {
 
 func (b *Buffer) ReadBigInt() *big.Int {
 	return b.DecodeSignedVarint(-1)
+}
+
+func (b *Buffer) ReadBool() bool {
+	bit := b.ReadByte()
+	o := true
+	if bit == 0 {
+		o = false
+	}
+
+	return o
 }

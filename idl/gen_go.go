@@ -192,6 +192,8 @@ func goType(m *SpecType) string {
 		return "uint64"
 	case Mint:
 		return "int64"
+	case Mbool:
+		return "bool"
 	case Mstruct:
 		return "*" + m.StructName
 	default:
@@ -213,6 +215,8 @@ func goWriteFunc(m *SpecType, fname string) string {
 		return fmt.Sprintf("d.WriteUint64(%s)", fname)
 	case Muint8:
 		return fmt.Sprintf("d.WriteByte(%s)", fname)
+	case Mbool:
+		return fmt.Sprintf("d.WriteBool(%s)", fname)
 	case Muuid:
 		return fmt.Sprintf("d.WriteUUID(%s)", fname)
 	case Mfloat32:
@@ -244,6 +248,8 @@ func goReadFunc(m *SpecType) string {
 		return "d.ReadUint32()"
 	case Muint64:
 		return "d.ReadUint64()"
+	case Mbool:
+		return "d.ReadBool()"
 	case Muint8:
 		return "d.ReadByte()"
 	case Mfloat32:

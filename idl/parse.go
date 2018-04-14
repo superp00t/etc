@@ -22,6 +22,7 @@ const (
 	Mbigint
 	Mint
 	Muint
+	Mbool
 	McheckLater
 )
 
@@ -37,6 +38,8 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 	}
 
 	switch str {
+	case "bool":
+		return mkspec(Mbool)
 	case "string":
 		return mkspec(Mstring)
 	case "uint8", "byte":
@@ -45,7 +48,7 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 		return mkspec(Muint16)
 	case "uint32":
 		return mkspec(Muint32)
-	case "time", "uint64":
+	case "uint64":
 		return mkspec(Muint64)
 	case "bytes":
 		return mkspec(Mbytes)
@@ -55,7 +58,7 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 		return mkspec(Muuid)
 	case "int":
 		return mkspec(Mint)
-	case "uint":
+	case "time", "uint":
 		return mkspec(Muint)
 	case "bigint":
 		return mkspec(Mbigint)

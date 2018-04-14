@@ -126,3 +126,11 @@ func (b *Buffer) WriteInt(v int64) {
 func (b *Buffer) WriteBigInt(v *big.Int) {
 	b.EncodeSignedVarint(v)
 }
+
+func (b *Buffer) WriteBool(v bool) {
+	var bit uint8
+	if v {
+		bit++
+	}
+	b.WriteByte(bit)
+}

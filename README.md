@@ -37,6 +37,7 @@ rpc exampleRPC {
 
 ## Coming soon™
 
+- enums
 - imports
 - speed increases
 - Code generators for JavaScript, Lua, and C
