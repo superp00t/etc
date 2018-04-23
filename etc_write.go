@@ -116,7 +116,7 @@ func (b *Buffer) WriteRandom(i int) {
 }
 
 func (b *Buffer) WriteUint(v uint64) {
-	b.EncodeUnsignedVarint(big.NewInt(int64(v)))
+	b.EncodeUnsignedVarint(big.NewInt(0).SetUint64(v))
 }
 
 func (b *Buffer) WriteInt(v int64) {
