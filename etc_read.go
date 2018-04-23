@@ -230,3 +230,13 @@ func (b *Buffer) ReadBool() bool {
 
 	return o
 }
+
+func (b *Buffer) ReadRemainder() []byte {
+	return b.buf[b.Rpos():b.Wpos()]
+}
+
+func (b *Buffer) ReadFixedString(i int) string {
+	by := make([]byte, i)
+	b.Read(by)
+	return string(by)
+}

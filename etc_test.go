@@ -10,14 +10,17 @@ func TestBuffer(t *testing.T) {
 	var tstfloats = []float32{
 		6.022140857,
 		12312315.34,
+		0,
 		3245365.342342,
 	}
 	var testdata = []uint64{
+		0,
 		123123,
 		69420,
 		6022140857,
 		0xDEADBEEF,
 		8982343454,
+		0,
 		0000000000,
 		9999999999,
 	}
@@ -47,6 +50,9 @@ func TestBuffer(t *testing.T) {
 	e.WriteUUID(u)
 	fmt.Println(e.Len())
 
+	tfs := "testityeah"
+	e.WriteFixedString(10, tfs)
+
 	for i := 0; i < len(testdata); i++ {
 		ca := e.ReadUint()
 		if testdata[i] != ca {
@@ -72,6 +78,11 @@ func TestBuffer(t *testing.T) {
 	uid := e.ReadUUID()
 	if !uid.Cmp(u) {
 		t.Fatal("UUID mismatch")
+	}
+
+	str := e.ReadRemainder()
+	if string(str) != tfs {
+		t.Fatal("Invalid string " + string(str))
 	}
 
 	ff := NewBuffer()

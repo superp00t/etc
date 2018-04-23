@@ -134,3 +134,10 @@ func (b *Buffer) WriteBool(v bool) {
 	}
 	b.WriteByte(bit)
 }
+
+func (b *Buffer) WriteFixedString(i int, v string) {
+	by := make([]byte, i)
+	copy(by, []byte(v))
+
+	b.Write(by)
+}
