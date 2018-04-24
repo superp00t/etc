@@ -24,7 +24,7 @@ func (b *Buffer) ReadRune() (rune, int, error) {
 		b.rpos++
 		return rune(c), 1, nil
 	}
-	r, n := utf8.DecodeRune(b.buf[b.wpos:])
+	r, n := utf8.DecodeRune(b.buf[b.rpos:])
 	b.rpos += n
 
 	return r, n, nil

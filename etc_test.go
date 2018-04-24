@@ -34,6 +34,10 @@ func TestBuffer(t *testing.T) {
 		100000000000,
 		-53564644234,
 	}
+	var runes = []rune{
+		'™',
+		'🖕',
+	}
 
 	e := NewBuffer()
 
@@ -47,6 +51,10 @@ func TestBuffer(t *testing.T) {
 
 	for _, v := range signtest {
 		e.WriteInt(v)
+	}
+
+	for _, v := range runes {
+		e.WriteRune(v)
 	}
 
 	u, _ := ParseUUID("123e4567-e89b-12d3-a456-426655440000")
@@ -75,6 +83,13 @@ func TestBuffer(t *testing.T) {
 		fmt.Println(ca)
 		if signtest[i] != ca {
 			t.Fatal("mismatch with", signtest[i], "(got ", ca, ")")
+		}
+	}
+
+	for i := 0; i < len(runes); i++ {
+		run, _, _ := e.ReadRune()
+		if run != runes[i] {
+			t.Fatal("mismatch with", runes[i], "(got ", run, ")")
 		}
 	}
 
