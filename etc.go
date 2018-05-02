@@ -7,15 +7,12 @@ import (
 )
 
 type Buffer struct {
-	buf        []byte
-	rpos, wpos int
+	backend Backend
 }
 
 func NewBuffer() *Buffer {
 	return &Buffer{
-		buf:  make([]byte, fragmentSize),
-		rpos: 0,
-		wpos: 0,
+		backend: MemBackend(),
 	}
 }
 
@@ -30,7 +27,7 @@ func MkBuffer(b []byte) *Buffer {
 }
 
 func (b *Buffer) Bytes() []byte {
-	return b.buf[:b.wpos]
+	return b.backend.Bytes()
 }
 
 func (b *Buffer) Sha512Digest() []byte {

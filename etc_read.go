@@ -19,13 +19,17 @@ func (b *Buffer) ReadRune() (rune, int, error) {
 		return 0, 0, io.EOF
 	}
 
-	c := b.buf[b.rpos]
+	ahead := b.backend.Rpos()
+	by := make([]byte, 8)
+	b.Read(by)
+
+	c := by[0]
 	if c < utf8.RuneSelf {
-		b.rpos++
 		return rune(c), 1, nil
 	}
-	r, n := utf8.DecodeRune(b.buf[b.rpos:])
-	b.rpos += n
+
+	r, n := utf8.DecodeRune(by)
+	b.backend.Seek(ahead + int64(n))
 
 	return r, n, nil
 }
@@ -37,46 +41,51 @@ func (b *Buffer) WriteRune(r rune) {
 }
 
 func (b *Buffer) Available() int {
-	return b.Len() - b.rpos
+	return b.Len() - int(b.backend.Rpos())
 }
 
 func (b *Buffer) String() string {
 	return string(b.Bytes())
 }
 
-func (b *Buffer) SeekW(offset int) {
-	b.wpos = offset
+func (b *Buffer) SeekW(offset int64) {
+	b.backend.SeekW(offset)
 }
 
-func (b *Buffer) SeekR(offset int) {
-	b.rpos = offset
+func (b *Buffer) SeekR(offset int64) {
+	b.Seek(offset)
 }
 
-func (b *Buffer) Rpos() int {
-	return b.rpos
+func (b *Buffer) Seek(offset int64) {
+	b.backend.Seek(offset)
 }
 
-func (b *Buffer) Wpos() int {
-	return b.wpos
+func (b *Buffer) Rpos() int64 {
+	return b.backend.Rpos()
+}
+
+func (b *Buffer) Wpos() int64 {
+	return b.backend.Wpos()
 }
 
 func (b *Buffer) ReadByte() uint8 {
-	if b.rpos > len(b.buf)-1 {
-		return 0
-	}
-	i := b.buf[b.rpos]
-	b.rpos++
-	return i
+	// if b.rpos > len(b.buf)-1 {
+	// 	return 0
+	// }
+	// i := b.buf[b.rpos]
+	// b.rpos++
+
+	return b.backend.ReadByte()
 }
 
 func (b *Buffer) Len() int {
-	return b.wpos
+	return int(b.backend.Size())
 }
 
 func (b *Buffer) Read(buf []byte) (int, error) {
 	rd := 0
 	for i := 0; i < len(buf); i++ {
-		if b.rpos == b.Len() {
+		if b.Rpos() == b.backend.Size() {
 			return rd, io.EOF
 		}
 
@@ -232,7 +241,11 @@ func (b *Buffer) ReadBool() bool {
 }
 
 func (b *Buffer) ReadRemainder() []byte {
-	return b.buf[b.Rpos():b.Wpos()]
+	out := make([]byte, int(b.backend.Size()-b.Rpos()))
+	for i := 0; i < len(out); i++ {
+		out[i] = b.ReadByte()
+	}
+	return out
 }
 
 func (b *Buffer) ReadFixedString(i int) string {

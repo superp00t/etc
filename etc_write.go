@@ -8,16 +8,8 @@ import (
 	"math/big"
 )
 
-const (
-	fragmentSize = 256
-)
-
 func (b *Buffer) WriteByte(v uint8) {
-	if len(b.buf) < b.wpos+1 {
-		b.buf = append(b.buf, make([]byte, fragmentSize)...)
-	}
-	b.buf[b.wpos] = v
-	b.wpos++
+	b.backend.WriteByte(v)
 }
 
 func (b *Buffer) Write(buf []byte) (int, error) {

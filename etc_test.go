@@ -3,10 +3,11 @@ package etc
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestBuffer(t *testing.T) {
-
+	bnch := time.Now()
 	var tstfloats = []float32{
 		6.022140857,
 		12312315.34,
@@ -114,4 +115,6 @@ func TestBuffer(t *testing.T) {
 	if ff.Available() != 0 {
 		t.Fatal("Invalid available", ff.Available())
 	}
+
+	fmt.Println(time.Since(bnch))
 }
