@@ -133,3 +133,13 @@ func (b *Buffer) WriteFixedString(i int, v string) {
 
 	b.Write(by)
 }
+
+func (b *Buffer) Jump(offset int64) {
+	o := b.Rpos()
+	b.Seek(o + offset)
+}
+
+func (b *Buffer) Reverse(offset int64) {
+	o := b.Rpos()
+	b.Seek(o - offset)
+}
