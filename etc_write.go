@@ -9,14 +9,11 @@ import (
 )
 
 func (b *Buffer) WriteByte(v uint8) {
-	b.backend.WriteByte(v)
+	b.backend.Write([]byte{v})
 }
 
 func (b *Buffer) Write(buf []byte) (int, error) {
-	for _, v := range buf {
-		b.WriteByte(v)
-	}
-	return len(buf), nil
+	return b.backend.Write(buf)
 }
 
 func (b *Buffer) WriteInt16(v int16) {

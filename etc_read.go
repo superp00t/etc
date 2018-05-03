@@ -5,6 +5,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"strings"
 	"unicode/utf8"
 
 	"golang.org/x/text/encoding/unicode"
@@ -69,13 +70,12 @@ func (b *Buffer) Wpos() int64 {
 }
 
 func (b *Buffer) ReadByte() uint8 {
-	// if b.rpos > len(b.buf)-1 {
-	// 	return 0
-	// }
-	// i := b.buf[b.rpos]
-	// b.rpos++
-
-	return b.backend.ReadByte()
+	var bu [1]byte
+	_, err := b.Read(bu[:])
+	if err != nil {
+		panic(err)
+	}
+	return bu[0]
 }
 
 func (b *Buffer) Len() int {
@@ -83,16 +83,7 @@ func (b *Buffer) Len() int {
 }
 
 func (b *Buffer) Read(buf []byte) (int, error) {
-	rd := 0
-	for i := 0; i < len(buf); i++ {
-		if b.Rpos() == b.backend.Size() {
-			return rd, io.EOF
-		}
-
-		buf[i] = b.ReadByte()
-		rd++
-	}
-	return rd, nil
+	return b.backend.Read(buf)
 }
 
 func (b *Buffer) ReadWChar(ln int) string {
@@ -251,5 +242,5 @@ func (b *Buffer) ReadRemainder() []byte {
 func (b *Buffer) ReadFixedString(i int) string {
 	by := make([]byte, i)
 	b.Read(by)
-	return string(by)
+	return strings.TrimRight(string(by), "\x00")
 }

@@ -1,12 +1,32 @@
 package etc
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
+func rndm() string {
+	b := NewBuffer()
+	b.WriteRandom(20)
+	return hex.EncodeToString(b.Bytes())
+}
+
 func TestBuffer(t *testing.T) {
+	t1, err := FileController("/tmp/" + rndm())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t2 := NewBuffer()
+	buffertest("file", t1, t)
+	buffertest("memory", t2, t)
+}
+
+func buffertest(name string, e *Buffer, t *testing.T) {
 	bnch := time.Now()
 	var tstfloats = []float32{
 		6.022140857,
@@ -40,7 +60,7 @@ func TestBuffer(t *testing.T) {
 		'🖕',
 	}
 
-	e := NewBuffer()
+	e.WriteFixedString(10, "testing")
 
 	for _, v := range testdata {
 		e.WriteUint(v)
@@ -65,17 +85,22 @@ func TestBuffer(t *testing.T) {
 	tfs := "testityeah"
 	e.WriteFixedString(10, tfs)
 
+	if stt := e.ReadFixedString(10); stt != "testing" {
+		t.Fatal(name, "invalid fixed string: "+stt, spew.Sdump([]byte(stt)))
+	}
+
+	fmt.Println(e.Rpos(), e.backend.Size(), spew.Sdump(e.Bytes()))
 	for i := 0; i < len(testdata); i++ {
 		ca := e.ReadUint()
 		if testdata[i] != ca {
-			t.Fatal("mismatch with", testdata[i], "(got ", ca, ")")
+			t.Fatal(name, "mismatch with", testdata[i], "(got ", ca, ")")
 		}
 	}
 
 	for i := 0; i < len(tstfloats); i++ {
 		ca := e.ReadFloat32()
 		if tstfloats[i] != ca {
-			t.Fatal("mismatch with", tstfloats, "(got ", ca, ")")
+			t.Fatal(name, "mismatch with", tstfloats, "(got ", ca, ")")
 		}
 	}
 
@@ -83,25 +108,25 @@ func TestBuffer(t *testing.T) {
 		ca := e.ReadInt()
 		fmt.Println(ca)
 		if signtest[i] != ca {
-			t.Fatal("mismatch with", signtest[i], "(got ", ca, ")")
+			t.Fatal(name, "mismatch with", signtest[i], "(got ", ca, ")")
 		}
 	}
 
 	for i := 0; i < len(runes); i++ {
 		run, _, _ := e.ReadRune()
 		if run != runes[i] {
-			t.Fatal("mismatch with", runes[i], "(got ", run, ")")
+			t.Fatal(name, "mismatch with", runes[i], "(got ", run, ")")
 		}
 	}
 
 	uid := e.ReadUUID()
 	if !uid.Cmp(u) {
-		t.Fatal("UUID mismatch")
+		t.Fatal(name, "UUID mismatch")
 	}
 
 	str := e.ReadRemainder()
 	if string(str) != tfs {
-		t.Fatal("Invalid string " + string(str))
+		t.Fatal(name, "Invalid string "+string(str))
 	}
 
 	ff := NewBuffer()
@@ -113,7 +138,7 @@ func TestBuffer(t *testing.T) {
 	ff.ReadBytes(2)
 
 	if ff.Available() != 0 {
-		t.Fatal("Invalid available", ff.Available())
+		t.Fatal(name, "Invalid available", ff.Available())
 	}
 
 	fmt.Println(time.Since(bnch))
