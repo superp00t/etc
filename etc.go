@@ -3,6 +3,7 @@ package etc
 import (
 	"compress/zlib"
 	"crypto/sha512"
+	"encoding/base64"
 	"io"
 )
 
@@ -20,10 +21,23 @@ func FromString(b string) *Buffer {
 	return MkBuffer([]byte(b))
 }
 
+func FromBytes(b []byte) *Buffer {
+	return MkBuffer(b)
+}
+
+func FromBase64(s string) *Buffer {
+	b, _ := base64.URLEncoding.DecodeString(s)
+	return FromBytes(b)
+}
+
 func MkBuffer(b []byte) *Buffer {
 	bf := NewBuffer()
 	bf.Write(b)
 	return bf
+}
+
+func (b *Buffer) Base64() string {
+	return base64.URLEncoding.EncodeToString(b.Bytes())
 }
 
 func (b *Buffer) Bytes() []byte {

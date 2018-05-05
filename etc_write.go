@@ -140,3 +140,11 @@ func (b *Buffer) Reverse(offset int64) {
 	o := b.Rpos()
 	b.Seek(o - offset)
 }
+
+func (b *Buffer) WriteUTF8(u string) {
+	data := []byte(u)
+	length := len(data)
+
+	b.WriteUint(uint64(length))
+	b.Write(data)
+}

@@ -244,3 +244,30 @@ func (b *Buffer) ReadFixedString(i int) string {
 	b.Read(by)
 	return strings.TrimRight(string(by), "\x00")
 }
+
+func (b *Buffer) ReadUTF8() string {
+	length := b.ReadUint()
+	if length == 0 {
+		return ""
+	}
+
+	e := b.ReadBytes(int(length))
+	if !validateUTF8(e, length) {
+		return ""
+	}
+
+	return string(e)
+}
+
+func validateUTF8(data []byte, length uint64) bool {
+	e := FromBytes(data)
+
+	for i := uint64(0); i < length; i++ {
+		_, _, err := e.ReadRune()
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
+}

@@ -24,6 +24,13 @@ func TestBuffer(t *testing.T) {
 	t2 := NewBuffer()
 	buffertest("file", t1, t)
 	buffertest("memory", t2, t)
+
+	t3 := NewBuffer()
+	t3.WriteFixedString(4, "test")
+	t3.WriteUint(12345678)
+
+	fmt.Println(t3.Base64())
+	fmt.Println(spew.Sdump(t3.Bytes()))
 }
 
 func buffertest(name string, e *Buffer, t *testing.T) {
@@ -58,6 +65,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	var runes = []rune{
 		'™',
 		'🖕',
+		'𝕬',
 	}
 
 	e.WriteFixedString(10, "testing")
