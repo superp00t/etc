@@ -25,6 +25,7 @@ type Backend interface {
 	Rpos() int64
 	Size() int64
 	Bytes() []byte
+	Close() error
 }
 
 type memBackend struct {
@@ -46,6 +47,10 @@ func MemBackend() Backend {
 	m.rpos = 0
 
 	return m
+}
+
+func (m *memBackend) Close() error {
+	return nil
 }
 
 func (m *memBackend) Size() int64 {
@@ -170,6 +175,10 @@ func (f *fsBackend) Write(b []byte) (int, error) {
 	} else {
 		return i, err
 	}
+}
+
+func (f *fsBackend) Close() error {
+	return f.file.Close()
 }
 
 func FsBackend(path string) (Backend, error) {

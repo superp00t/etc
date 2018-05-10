@@ -78,3 +78,7 @@ func ZlibDecompress(input []byte) ([]byte, error) {
 
 	return out.Bytes(), nil
 }
+
+func (e *Buffer) Close() error {
+	return e.backend.Close()
+}
