@@ -1,6 +1,7 @@
 package etc
 
 import (
+	"fmt"
 	"io"
 	"os"
 )
@@ -19,6 +20,7 @@ func FileController(path string) (*Buffer, error) {
 type Backend interface {
 	Read([]byte) (int, error)
 	Write([]byte) (int, error)
+	Flush() error
 	Seek(int64)
 	SeekW(int64)
 	Wpos() int64
@@ -49,6 +51,14 @@ func MemBackend() Backend {
 	return m
 }
 
+func (m *memBackend) Flush() error {
+	m.wpos = 0
+	m.rpos = 0
+	m.buf = []byte{}
+
+	return nil
+}
+
 func (m *memBackend) Close() error {
 	return nil
 }
@@ -68,7 +78,7 @@ func (m *memBackend) writeByte(v uint8) {
 }
 
 func (m *memBackend) readByte() uint8 {
-	if m.Rpos() > int64(len(m.buf)) {
+	if m.Rpos() > int64(len(m.buf))-1 {
 		return 0
 	}
 
@@ -119,8 +129,17 @@ func (m *memBackend) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
+func (f *fsBackend) Flush() error {
+	f.file.Seek(0, 0)
+	f.file.Truncate(0)
+	f.wpos = 0
+	f.rpos = 0
+	return nil
+}
+
 func (f *fsBackend) SeekW(offset int64) {
 	f.wpos = offset
+	f.file.Seek(offset, 0)
 }
 
 func (f *fsBackend) Wpos() int64 {
@@ -159,7 +178,7 @@ func (f *fsBackend) Bytes() []byte {
 }
 
 func (f *fsBackend) Read(b []byte) (int, error) {
-	f.Seek(f.rpos)
+	f.file.Seek(f.rpos, 0)
 	i, err := f.file.Read(b)
 	if err == nil {
 		f.rpos += int64(i)
@@ -168,11 +187,14 @@ func (f *fsBackend) Read(b []byte) (int, error) {
 }
 
 func (f *fsBackend) Write(b []byte) (int, error) {
+	f.file.Seek(f.wpos, 0)
+
 	i, err := f.file.Write(b)
 	if err == nil {
 		f.wpos += int64(i)
 		return i, nil
 	} else {
+		fmt.Println("ERR", "=>", err)
 		return i, err
 	}
 }
@@ -192,7 +214,7 @@ func FsBackend(path string) (Backend, error) {
 		}
 	}
 
-	f.file, err = os.OpenFile(path, os.O_APPEND|os.O_RDWR, 0700)
+	f.file, err = os.OpenFile(path, os.O_RDWR, 0700)
 	return f, err
 }
 

@@ -17,6 +17,10 @@ func NewBuffer() *Buffer {
 	}
 }
 
+func (b *Buffer) Flush() error {
+	return b.backend.Flush()
+}
+
 func FromString(b string) *Buffer {
 	return MkBuffer([]byte(b))
 }

@@ -67,6 +67,11 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		'🖕',
 		'𝕬',
 	}
+	var strs = []string{
+		"fffff",
+		"Quoth the raven, nevermore",
+		"Memes",
+	}
 
 	e.WriteFixedString(10, "testing")
 
@@ -84,6 +89,10 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 
 	for _, v := range runes {
 		e.WriteRune(v)
+	}
+
+	for _, v := range strs {
+		e.WriteUTF8(v)
 	}
 
 	u, _ := ParseUUID("123e4567-e89b-12d3-a456-426655440000")
@@ -124,6 +133,13 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		run, _, _ := e.ReadRune()
 		if run != runes[i] {
 			t.Fatal(name, "mismatch with", runes[i], "(got ", run, ")")
+		}
+	}
+
+	for i := 0; i < len(strs); i++ {
+		s := e.ReadUTF8()
+		if s != strs[i] {
+			t.Fatal(name, "mismatch with", strs[i], "(got ", s, ")")
 		}
 	}
 

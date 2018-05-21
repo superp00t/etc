@@ -2,6 +2,7 @@ package etc
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"math"
 	"math/big"
@@ -252,22 +253,28 @@ func (b *Buffer) ReadUTF8() string {
 	}
 
 	e := b.ReadBytes(int(length))
-	if !validateUTF8(e, length) {
+	if !validateUTF8(e) {
+		fmt.Println("Invalid UTF8!!")
 		return ""
 	}
 
 	return string(e)
 }
 
-func validateUTF8(data []byte, length uint64) bool {
-	e := FromBytes(data)
+func (b *Buffer) ReadBoxNonce() *[24]byte {
+	n := new([24]byte)
+	copy(n[:], b.ReadBytes(24))
+	return n
+}
 
-	for i := uint64(0); i < length; i++ {
-		_, _, err := e.ReadRune()
-		if err != nil {
-			return false
-		}
-	}
+func (b *Buffer) ReadBoxKey() *[32]byte {
+	n := new([32]byte)
+	copy(n[:], b.ReadBytes(32))
+	return n
+}
 
-	return true
+func validateUTF8(data []byte) bool {
+	e := string(data)
+
+	return utf8.ValidString(e)
 }
