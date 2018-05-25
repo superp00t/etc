@@ -3,6 +3,8 @@ package etc
 import (
 	"encoding/hex"
 	"fmt"
+	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,6 +33,14 @@ func TestBuffer(t *testing.T) {
 
 	fmt.Println(t3.Base64())
 	fmt.Println(spew.Sdump(t3.Bytes()))
+
+	buf := FromString("a whisper goes around the world...")
+
+	var ot [35]byte
+	i, err := buf.Read(ot[:])
+	if err != io.EOF || i != 34 {
+		t.Fatal(err, i, "could not read correctly", spew.Sdump(ot[:]))
+	}
 }
 
 func buffertest(name string, e *Buffer, t *testing.T) {
@@ -149,8 +159,9 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	}
 
 	str := e.ReadRemainder()
-	if string(str) != tfs {
-		t.Fatal(name, "Invalid string "+string(str))
+	cap := strings.TrimRight(string(str), "\x00")
+	if cap != tfs {
+		t.Fatal(name, "Invalid string '"+cap+"'", spew.Sdump(str))
 	}
 
 	ff := NewBuffer()

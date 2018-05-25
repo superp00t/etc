@@ -74,7 +74,7 @@ func (b *Buffer) ReadByte() uint8 {
 	var bu [1]byte
 	_, err := b.Read(bu[:])
 	if err != nil {
-		panic(err)
+		return 0
 	}
 	return bu[0]
 }
@@ -233,10 +233,11 @@ func (b *Buffer) ReadBool() bool {
 }
 
 func (b *Buffer) ReadRemainder() []byte {
-	out := make([]byte, int(b.backend.Size()-b.Rpos()))
-	for i := 0; i < len(out); i++ {
-		out[i] = b.ReadByte()
-	}
+	// [ b e g i n | e n d ]
+	//	 1 2 3 4 5   6 7 9   rpos = 6
+
+	out := make([]byte, int(b.backend.Size()-b.Rpos()+1))
+	b.Read(out)
 	return out
 }
 

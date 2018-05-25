@@ -108,14 +108,13 @@ func (m *memBackend) SeekW(offset int64) {
 }
 
 func (m *memBackend) Read(b []byte) (int, error) {
-	if m.Rpos() > m.Size() {
-		return 0, io.EOF
-	}
-
 	rd := 0
 	for i := 0; i < len(b); i++ {
 		b[i] = m.readByte()
 		rd++
+		if m.Rpos() >= m.Size() {
+			return rd, io.EOF
+		}
 	}
 
 	return rd, nil
