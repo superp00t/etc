@@ -47,7 +47,13 @@ func (b *Buffer) Available() int {
 }
 
 func (b *Buffer) String() string {
-	return string(b.Bytes())
+	s := string(b.Bytes())
+
+	if utf8.ValidString(s) {
+		return s
+	}
+
+	return "(unprintable string)"
 }
 
 func (b *Buffer) SeekW(offset int64) {
