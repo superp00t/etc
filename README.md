@@ -2,6 +2,10 @@
 
 Etc is a binary encoding system. You can use its encoding functions manually, or you can use the format description language I call EtcSchema.
 
+[Etc in Rust](https://github.com/superp00t/etc-rs)
+
+[Etc in JavaScript](https://github.com/superp00t/etc-js)
+
 ## Example API usage
 
 ```go

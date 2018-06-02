@@ -8,6 +8,20 @@ import (
 	"math/big"
 )
 
+func reverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+
+	return string(runes)
+}
+
+func (b *Buffer) WriteInvertedString(l int, s string) {
+	v := reverseString(s)
+	b.WriteFixedString(l, v)
+}
+
 func (b *Buffer) WriteByte(v uint8) {
 	b.backend.Write([]byte{v})
 }

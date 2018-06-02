@@ -59,6 +59,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		0xDEADBEEF,
 		8982343454,
 		0,
+		18446744073709551557,
 		0000000000,
 		9999999999,
 		18446744073709551615,
@@ -69,6 +70,9 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		-9223372036854775808,
 		-50000,
 		6459,
+		10231203054842482308132903,
+		12333333333333333333333333333345353,
+		18446744073709551557,
 		100000000000,
 		-53564644234,
 	}
@@ -81,6 +85,9 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		"fffff",
 		"Quoth the raven, nevermore",
 		"Memes",
+		"שני בוטנים צעדו ברחוב. אחד הותקף.",
+		"Два арахиса шли по улице. Один из них подвергся нападению.",
+		"一つの妖怪がヨーロッパにあらわれている、――共産主義の妖怪が。"
 	}
 
 	e.WriteFixedString(10, "testing")
@@ -100,6 +107,9 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	for _, v := range runes {
 		e.WriteRune(v)
 	}
+
+	e.WriteInvertedString(4, "enGB")
+	e.WriteInvertedString(4, "WoW")
 
 	for _, v := range strs {
 		e.WriteUTF8(v)
@@ -144,6 +154,13 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		if run != runes[i] {
 			t.Fatal(name, "mismatch with", runes[i], "(got ", run, ")")
 		}
+	}
+
+	enGB := e.ReadInvertedString(4)
+	wow := e.ReadInvertedString(4)
+
+	if enGB != "enGB" && wow != "WoW" {
+		t.Fatal("could not handle bliz-style inverted strings (got " + enGB + " " + wow + ")")
 	}
 
 	for i := 0; i < len(strs); i++ {

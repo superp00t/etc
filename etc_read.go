@@ -42,6 +42,12 @@ func (b *Buffer) WriteRune(r rune) {
 	b.Write(buf[:n])
 }
 
+func (b *Buffer) ReadInvertedString(l int) string {
+	s := b.ReadFixedString(l)
+
+	return reverseString(s)
+}
+
 func (b *Buffer) Available() int {
 	return b.Len() - int(b.backend.Rpos())
 }
