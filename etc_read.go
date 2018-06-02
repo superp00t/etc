@@ -27,19 +27,18 @@ func (b *Buffer) ReadRune() (rune, int, error) {
 
 	c := by[0]
 	if c < utf8.RuneSelf {
+		b.backend.Seek(ahead + 1)
 		return rune(c), 1, nil
 	}
 
 	r, n := utf8.DecodeRune(by)
 	b.backend.Seek(ahead + int64(n))
 
-	return r, n, nil
-}
+	if r == utf8.RuneError {
+		return 0, 0, fmt.Errorf("Invalid utf8 sequence.")
+	}
 
-func (b *Buffer) WriteRune(r rune) {
-	buf := make([]byte, 8)
-	n := utf8.EncodeRune(buf, r)
-	b.Write(buf[:n])
+	return r, n, nil
 }
 
 func (b *Buffer) ReadInvertedString(l int) string {
@@ -246,7 +245,7 @@ func (b *Buffer) ReadBool() bool {
 
 func (b *Buffer) ReadRemainder() []byte {
 	// [ b e g i n | e n d ]
-	//	 1 2 3 4 5   6 7 9   rpos = 6
+	//   1 2 3 4 5   6 7 9   rpos = 6
 
 	out := make([]byte, int(b.backend.Size()-b.Rpos()+1))
 	b.Read(out)
@@ -267,7 +266,6 @@ func (b *Buffer) ReadUTF8() string {
 
 	e := b.ReadBytes(int(length))
 	if !validateUTF8(e) {
-		fmt.Println("Invalid UTF8!!")
 		return ""
 	}
 

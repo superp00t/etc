@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/superp00t/etc"
 
@@ -17,6 +18,7 @@ import (
 var (
 	pkg   = pflag.StringP("pkg", "p", "", "package string")
 	goOut = pflag.StringP("go_out", "g", "", "golang output")
+	jsOut = pflag.StringP("js_out", "j", "", "javascript output")
 )
 
 func main() {
@@ -32,18 +34,19 @@ func main() {
 		*pkg = f[0]
 	}
 
+	fi := loadSyntax(srcFile, *pkg)
+
 	if *goOut != "" {
-		compile(srcFile, *pkg, *goOut+"/"+*pkg)
+		compileGo(fi, *goOut+"/"+*pkg)
+	}
+
+	if *jsOut != "" {
+		compileJS(fi, filepath.Join(*jsOut, *pkg))
 	}
 }
 
-func fatalf(f string, args ...interface{}) {
-	fmt.Printf(f, args...)
-	os.Exit(-1)
-}
-
-func compile(in, pkgName, out string) {
-	prog, err := ioutil.ReadFile(in)
+func loadSyntax(path, pkg string) *idl.Syntax {
+	prog, err := ioutil.ReadFile(path)
 	if err != nil {
 		fatalf("%s", err)
 	}
@@ -53,20 +56,50 @@ func compile(in, pkgName, out string) {
 		fatalf("%s", err)
 	}
 
-	t.PackageName = pkgName
+	t.PackageName = pkg
+	return t
+}
 
+func fatalf(f string, args ...interface{}) {
+	fmt.Printf(f, args...)
+	os.Exit(-1)
+}
+
+func compileGo(t *idl.Syntax, out string) {
 	st, rpc := t.GenerateGo()
 
 	out1 := out + ".etc.go"
 	out2 := out + "-rpc.go"
 
-	ioutil.WriteFile(out1, []byte(st), 0700)
+	compileString(out1, st)
 	gofmt(out1)
 
 	if !exists(out2) {
 		if rpc != "" {
+			compileString(out2, rpc)
 			ioutil.WriteFile(out2, []byte(rpc), 0700)
 			gofmt(out2)
+		}
+	}
+}
+
+func compileString(path, data string) {
+	fmt.Println("Compiling", path)
+	ioutil.WriteFile(path, []byte(data), 0700)
+}
+
+// TypeScript declarations?
+func compileJS(t *idl.Syntax, out string) {
+	st, rpc := t.GenerateJS()
+
+	out1 := out + ".etc.js"
+	out2 := out + "-rpc.js"
+
+	compileString(out1, st)
+
+	if !exists(out2) {
+		if rpc != "" {
+			compileString(out2, rpc)
 		}
 	}
 }

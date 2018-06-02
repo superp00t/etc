@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"unicode/utf8"
 )
 
 func reverseString(s string) string {
@@ -136,6 +137,12 @@ func (b *Buffer) WriteBool(v bool) {
 		bit++
 	}
 	b.WriteByte(bit)
+}
+
+func (b *Buffer) WriteRune(r rune) {
+	buf := make([]byte, 8)
+	n := utf8.EncodeRune(buf, r)
+	b.Write(buf[:n])
 }
 
 func (b *Buffer) WriteFixedString(i int, v string) {
