@@ -89,10 +89,7 @@ func (b *Buffer) Wpos() int64 {
 
 func (b *Buffer) ReadByte() uint8 {
 	var bu [1]byte
-	_, err := b.Read(bu[:])
-	if err != nil {
-		fmt.Println("Err", err)
-	}
+	b.Read(bu[:])
 	return bu[0]
 }
 

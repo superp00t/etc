@@ -150,7 +150,7 @@ func NewListener(c Config) *Listener {
 				ag.peerAddr = addr
 				ag.streams = new(sync.Map)
 				ag.input = make(chan []byte)
-				
+
 				go ag.handleInit()
 				initialized := head.ReadDate()
 				signkey := head.ReadBytes(32)
@@ -184,7 +184,6 @@ func NewListener(c Config) *Listener {
 
 			
 
-				l.agents.Store(addr.String(), ag)
 			}
 
 			if op == CONN_DATA {
