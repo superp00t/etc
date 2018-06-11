@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,8 +19,16 @@ func rndm() string {
 	return hex.EncodeToString(b.Bytes())
 }
 
+func getRandomFile() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("APPDATA") + "\\" + rndm()
+	}
+
+	return "/tmp/" + rndm()
+}
+
 func TestBuffer(t *testing.T) {
-	t1, err := FileController("/tmp/" + rndm())
+	t1, err := FileController(getRandomFile())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,6 +51,41 @@ func TestBuffer(t *testing.T) {
 	if err != io.EOF || i != 34 {
 		t.Fatal(err, i, "could not read correctly", spew.Sdump(ot[:]))
 	}
+
+	g := NewBuffer()
+	g.WriteUint(10)
+	g.WriteUint(50)
+	g.WriteUint(14)
+	g.WriteUint(16428)
+	g.WriteUint(148)
+
+	fmt.Println(g.Rpos())
+	ten := g.ReadUint()
+	fmt.Println(g.Rpos())
+	fifty := g.ReadUint()
+	fmt.Println(g.Rpos())
+	fourteen := g.ReadUint()
+
+	if ten != 10 {
+		t.Fatal("ten error")
+	}
+
+	if fifty != 50 {
+		t.Fatal("fifty error")
+	}
+
+	if fourteen != 14 {
+		t.Fatal("fourteen error", fourteen, g.Bytes())
+	}
+
+	if c := g.ReadUint(); c != 16428 {
+		t.Fatal("leb err", c)
+	}
+
+	if g.ReadUint() != 148 {
+		t.Fatal("leb err 2")
+	}
+
 }
 
 func buffertest(name string, e *Buffer, t *testing.T) {
@@ -63,6 +108,11 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		0000000000,
 		9999999999,
 		18446744073709551615,
+		10,
+		50,
+		14,
+		0,
+		16428,
 	}
 	var signtest = []int64{
 		9223372036854775807,

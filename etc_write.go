@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"time"
 	"unicode/utf8"
 )
 
@@ -137,6 +138,10 @@ func (b *Buffer) WriteBool(v bool) {
 		bit++
 	}
 	b.WriteByte(bit)
+}
+
+func (b *Buffer) WriteDate(t time.Time) {
+	b.WriteUint(uint64(t.UnixNano() / int64(time.Millisecond)))
 }
 
 func (b *Buffer) WriteRune(r rune) {

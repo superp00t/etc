@@ -1,10 +1,9 @@
 package idl
 
 import (
-	"fmt"
-	"github.com/superp00t/etc"
 	"io"
-	"log"
+
+	"github.com/superp00t/etc"
 )
 
 type Token int
@@ -19,6 +18,7 @@ const (
 	TCloseBracket
 	TRPC
 	TReturns
+	TEnum
 )
 
 var keyword = map[string]Token{
@@ -28,6 +28,7 @@ var keyword = map[string]Token{
 	"rpc":    TRPC,
 	"{":      TOpenBracket,
 	"}":      TCloseBracket,
+	"enum":   TEnum,
 }
 
 type TokenPos struct {
@@ -74,6 +75,9 @@ func (l *Lexer) IgnoreComments() {
 }
 
 func (l *Lexer) terminate() (*TokenPos, error) {
+	if l.currentString == "" {
+		return nil, nil
+	}
 	t := new(TokenPos)
 	t.T = keyword[l.currentString]
 	t.S = l.currentString
@@ -84,29 +88,12 @@ func (l *Lexer) terminate() (*TokenPos, error) {
 }
 
 func (l *Lexer) ReadToken() (*TokenPos, error) {
-	curString := []rune{}
-
-	if l.eof {
-		return nil, io.EOF
-	}
-
-	for {
-		r, _, err := l.ReadRune()
-		fmt.Println(err, "?", string(r))
-		if err != nil {
-			fmt.Println(err)
-			log.Fatal(l.String())
-		}
-	}
-	log.Fatal(l.String())
-
 	for {
 		rn, _, err := l.ReadRune()
 		if err != nil {
 			// Terminate keyword upon EOF.
-			rn = ' '
 			if err == io.EOF {
-				l.eof = true
+				return l.terminate()
 			}
 		}
 
@@ -115,32 +102,16 @@ func (l *Lexer) ReadToken() (*TokenPos, error) {
 			continue
 		}
 
-		if rn == '\n' {
-			l.Ln += 1
-			l.Col = 0
-			if string(curString) != "" {
-				return l.terminate()
-			}
-			continue
-		}
-
-		if rn == '\r' {
-			l.Ln += 1
-			l.Col = 0
-			continue
-		}
-
-		l.Col += 1
-
-		if (rn == ' ' || rn == '\t') && string(curString) == "" && (l.Ln == 0 && l.Col == 0) {
-			return l.terminate()
-		}
-
 		if rn == ' ' || rn == '\t' {
+			l.Col += 1
 			return l.terminate()
 		}
 
-		fmt.Println(err, ">", string(rn))
+		if rn == '\n' {
+			l.Col = 0
+			l.Ln += 1
+			return l.terminate()
+		}
 
 		l.currentString += string(rn)
 	}
@@ -156,7 +127,9 @@ func Lex(input string) ([]*TokenPos, error) {
 			return nil, err
 		}
 
-		t = append(t, tk)
+		if tk != nil {
+			t = append(t, tk)
+		}
 	}
 
 	return t, nil

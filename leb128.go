@@ -81,11 +81,13 @@ func (b *Buffer) EncodeSignedVarint(x *big.Int) {
 	}
 }
 
-func (b *Buffer) EncodeUnsignedVarint(x *big.Int) {
-	mx := big.NewInt(0x80)
-	for x.Cmp(mx) > 0 {
-		b.WriteByte(byte(x.Uint64()) | 0x80)
-		x = x.Rsh(x, 7)
+func (b *Buffer) EncodeUnsignedVarint(c *big.Int) {
+	x := clone(c)
+
+	i127 := big.NewInt(0).SetUint64(127)
+	for x.Cmp(i127) == 1 {
+		b.WriteByte(uint8(x.Uint64() | 0x80))
+		x = big.NewInt(0).Rsh(x, 7)
 	}
 
 	b.WriteByte(byte(x.Uint64()))
@@ -93,7 +95,7 @@ func (b *Buffer) EncodeUnsignedVarint(x *big.Int) {
 
 func clone(x *big.Int) *big.Int {
 	y := big.NewInt(0)
-	*y = *x
+	y.SetBytes(x.Bytes())
 	return y
 }
 

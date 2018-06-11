@@ -57,19 +57,34 @@ it is intended to be fault-tolerant, and as such does not return errors for most
 You can define data structures with EtcSchema and make RPC request functions.
 
 `exampleData.etcschema`
-```ruby
-# Use compression (optional)
-# use zlib-compress
-
-struct exampleData {
- uint64   time_ms
- uuid     id
- float32  coordinates[] # dynamic array type
+```r
+# Enumerate Colors
+enum Color {
+ Red
+ Orange
+ Yellow
+ Green
+ Blue
+ Indigo
+ Violet
 }
 
-rpc exampleRPC {
- requestData(void)     -> exampleData
- postData(exampleData) -> void # use void to declare empty requests and responses
+struct Painting {
+ date     created
+ Color    tones[] # dynamic array type
+}
+
+struct PaintingQuery {
+ string match
+}
+
+struct PantingResponse {
+ Painting paintings[]
+}
+
+rpc LouvreDatabase {
+ queryPaintings(PaintingQuery) -> PaintingResponse
+ uploadPainting(Painting)      -> void # use void to declare empty requests and responses
 }
 ```
 

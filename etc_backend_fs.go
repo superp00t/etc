@@ -18,6 +18,7 @@ func FileController(path string) (*Buffer, error) {
 }
 
 type fsBackend struct {
+	path string
 	file *os.File
 	rpos int64
 	wpos int64
@@ -100,6 +101,7 @@ func (f *fsBackend) Close() error {
 func FsBackend(path string) (Backend, error) {
 	var err error
 	f := &fsBackend{}
+	f.path = path
 
 	if _, err := os.Stat(path); err != nil {
 		_, err2 := os.Create(path)

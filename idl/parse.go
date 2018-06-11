@@ -23,7 +23,9 @@ const (
 	Mint
 	Muint
 	Mbool
+	Mdate
 	McheckLater
+	Menum
 )
 
 func mkspec(m MType) *SpecType {
@@ -64,6 +66,8 @@ func (s *Syntax) CheckIfTypeExists(str string) *SpecType {
 		return mkspec(Mbigint)
 	case "float64":
 		return mkspec(Mfloat64)
+	case "date":
+		return mkspec(Mdate)
 	default:
 		c := mkspec(McheckLater)
 		c.StructName = str
@@ -94,10 +98,17 @@ type RPC_Proc struct {
 type Syntax struct {
 	PackageName string
 
+	Enums map[string]*enumMap
+
 	Pragmas      map[string]bool
 	MessageTypes map[string]*SpecType
 
 	RPC map[string]*RPC_Service
+}
+
+type enumMap struct {
+	keys []string
+	vals []uint64
 }
 
 func (s *Syntax) FixUnknownTypes() error {
@@ -121,9 +132,42 @@ func ParseTokens(tokens []*TokenPos) (*Syntax, error) {
 	s.Pragmas = make(map[string]bool)
 	s.RPC = make(map[string]*RPC_Service)
 	s.MessageTypes = make(map[string]*SpecType)
+	s.Enums = make(map[string]*enumMap)
 
 	for i := 0; i < len(tokens); {
 		tk := tokens[i]
+		if tk.T == TEnum {
+			i++
+			tk2 := tokens[i]
+			if tk2.T != TName {
+				return nil, fmt.Errorf("(%d, %d) unexpected token %s", tk2.Ln, tk2.Col, tk2.S)
+			}
+
+			i++
+			tk3 := tokens[i]
+			if tk3.T != TOpenBracket {
+				return nil, fmt.Errorf("(%d, %d) expected open bracket", tk3.Ln, tk2.Col)
+			}
+
+			en := new(enumMap)
+			var o uint64
+
+			i++
+			for y := i; y < len(tokens); y++ {
+				if tokens[y].T == TCloseBracket {
+					i = y + 1
+					break
+				}
+
+				en.keys = append(en.keys, tokens[y].S)
+				en.vals = append(en.vals, o)
+				o += 1
+			}
+
+			s.Enums[tk2.S] = en
+			tk = tokens[i]
+		}
+
 		if tk.T == TPragma {
 			if len(tokens) < i+2 {
 				return nil, fmt.Errorf("(%d, %d) Error parsing Pragma: unexpected EOF", tk.Ln, tk.Col)
@@ -230,7 +274,13 @@ func ParseTokens(tokens []*TokenPos) (*Syntax, error) {
 					i++
 					break
 				}
-				typeSpec := s.CheckIfTypeExists(tz.S)
+				var typeSpec *SpecType
+				if s.Enums[tz.S] != nil {
+					typeSpec = mkspec(Menum)
+				} else {
+					typeSpec = s.CheckIfTypeExists(tz.S)
+				}
+
 				typeSpec.FieldName = tokens[i+1].S
 				if strings.HasSuffix(typeSpec.FieldName, "[]") {
 					typeSpec.ArrayType = true

@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"golang.org/x/text/encoding/unicode"
@@ -52,13 +53,18 @@ func (b *Buffer) Available() int {
 }
 
 func (b *Buffer) String() string {
+	f, ok := b.backend.(*fsBackend)
+	if ok {
+		return fmt.Sprintf("(file @%s)", f.path)
+	}
+
 	s := string(b.Bytes())
 
 	if utf8.ValidString(s) {
 		return s
 	}
 
-	return "(unprintable string)"
+	return "(non-UTF8 string)"
 }
 
 func (b *Buffer) SeekW(offset int64) {
@@ -85,7 +91,7 @@ func (b *Buffer) ReadByte() uint8 {
 	var bu [1]byte
 	_, err := b.Read(bu[:])
 	if err != nil {
-		return 0
+		fmt.Println("Err", err)
 	}
 	return bu[0]
 }
@@ -192,6 +198,10 @@ func (b *Buffer) ReadString(delimiter byte) string {
 	}
 
 	return string(i)
+}
+
+func (b *Buffer) ReadDate() time.Time {
+	return time.Unix(0, int64(b.ReadUint())*int64(time.Millisecond))
 }
 
 func (b *Buffer) ReadStringUntil(delimiter rune) string {

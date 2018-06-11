@@ -51,6 +51,26 @@ func (s *Syntax) GenerateGo() (string, string) {
 	}
 	src += ")\n"
 
+	if len(s.Enums) > 0 {
+		pkg := s.SortedEnumTypes()
+		for _, v := range pkg {
+			src += "\ntype " + v + " uint64\n"
+		}
+	}
+
+	src += "const ("
+	if len(s.Enums) > 0 {
+		pkg := s.SortedEnumTypes()
+		for _, v := range pkg {
+			en := s.Enums[v]
+			for idx, e := range en.keys {
+				src += fmt.Sprintf("\n\t%s %s = %d\n", e, v, en.vals[idx])
+			}
+		}
+		src += "\n"
+	}
+	src += "\n)"
+
 	encS := ""
 	encodeS := ""
 	jsun := ""
@@ -203,10 +223,12 @@ func goType(m *SpecType) string {
 
 func goWriteFunc(m *SpecType, fname string) string {
 	switch m.Type {
+	case Mdate:
+		return fmt.Sprintf("d.WriteDate(%s)", fname)
 	case Mbytes:
 		return fmt.Sprintf("d.WriteLimitedBytes(%s)", fname)
 	case Mstring:
-		return fmt.Sprintf("d.WriteCString(%s)", fname)
+		return fmt.Sprintf("d.WriteUTF8(%s)", fname)
 	case Muint16:
 		return fmt.Sprintf("d.WriteUint16(%s)", fname)
 	case Muint32:
@@ -238,10 +260,12 @@ func goWriteFunc(m *SpecType, fname string) string {
 
 func goReadFunc(m *SpecType) string {
 	switch m.Type {
+	case Mdate:
+		return "d.ReadDate()"
 	case Mbytes:
 		return "d.ReadLimitedBytes()"
 	case Mstring:
-		return "d.ReadCString()"
+		return "d.ReadUTF8()"
 	case Muint16:
 		return "d.ReadUint16()"
 	case Muint32:
