@@ -26,7 +26,6 @@ func getRandomFile() string {
 
 	return "/tmp/" + rndm()
 }
-
 func TestBuffer(t *testing.T) {
 	t1, err := FileController(getRandomFile())
 	if err != nil {
@@ -102,6 +101,8 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		69420,
 		6022140857,
 		0xDEADBEEF,
+		16428,
+		148,
 		8982343454,
 		0,
 		18446744073709551557,

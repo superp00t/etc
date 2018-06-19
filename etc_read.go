@@ -180,7 +180,7 @@ func (b *Buffer) ReadFloat64() float64 {
 	return bits
 }
 
-func (b *Buffer) ReadString(delimiter byte) string {
+func (b *Buffer) ReadString(delimiter byte) (string, error) {
 	var i []byte
 	for {
 		c := b.ReadByte()
@@ -194,11 +194,19 @@ func (b *Buffer) ReadString(delimiter byte) string {
 		i = append(i, c)
 	}
 
-	return string(i)
+	return string(i), nil
+}
+
+func (b *Buffer) ReadUString() string {
+	return b.ReadUTF8()
 }
 
 func (b *Buffer) ReadDate() time.Time {
 	return time.Unix(0, int64(b.ReadUint())*int64(time.Millisecond))
+}
+
+func (b *Buffer) ReadTime() time.Time {
+	return time.Unix(0, b.ReadInt())
 }
 
 func (b *Buffer) ReadStringUntil(delimiter rune) string {
@@ -220,7 +228,8 @@ func (b *Buffer) ReadStringUntil(delimiter rune) string {
 }
 
 func (b *Buffer) ReadCString() string {
-	return b.ReadString(0)
+	s, _ := b.ReadString(0)
+	return s
 }
 
 func (b *Buffer) ReadLimitedBytes() []byte {
@@ -295,4 +304,8 @@ func validateUTF8(data []byte) bool {
 	e := string(data)
 
 	return utf8.ValidString(e)
+}
+
+func (b *Buffer) ToString() string {
+	return string(b.Bytes())
 }

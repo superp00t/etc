@@ -19,6 +19,10 @@ func reverseString(s string) string {
 	return string(runes)
 }
 
+func (b *Buffer) WriteUString(s string) {
+	b.WriteUTF8(s)
+}
+
 func (b *Buffer) WriteInvertedString(l int, s string) {
 	v := reverseString(s)
 	b.WriteFixedString(l, v)
@@ -142,6 +146,10 @@ func (b *Buffer) WriteBool(v bool) {
 
 func (b *Buffer) WriteDate(t time.Time) {
 	b.WriteUint(uint64(t.UnixNano() / int64(time.Millisecond)))
+}
+
+func (b *Buffer) WriteTime(t time.Time) {
+	b.WriteInt(t.UnixNano())
 }
 
 func (b *Buffer) WriteRune(r rune) {

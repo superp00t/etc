@@ -146,7 +146,7 @@ func ParseTokens(tokens []*TokenPos) (*Syntax, error) {
 			i++
 			tk3 := tokens[i]
 			if tk3.T != TOpenBracket {
-				return nil, fmt.Errorf("(%d, %d) expected open bracket", tk3.Ln, tk2.Col)
+				return nil, fmt.Errorf("(%d, %d) expected open bracket, got \"%s\"", tk3.Ln, tk3.Col, tk3.S)
 			}
 
 			en := new(enumMap)
