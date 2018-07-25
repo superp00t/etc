@@ -180,6 +180,58 @@ func (b *Buffer) ReadFloat64() float64 {
 	return bits
 }
 
+func (b *Buffer) ReadUntilToken(s string) (string, error) {
+	tmp := []rune{}
+	str := []rune(s)
+
+	offset := 0
+
+	for {
+		if offset > len(str) {
+			return "", fmt.Errorf("etc: offset error")
+		}
+
+		rn, _, err := b.ReadRune()
+		if err != nil {
+			return "", err
+		}
+
+		if rn == str[0] {
+			f := false
+			ct := []rune{}
+			for x := 1; ; x++ {
+				r, _, err := b.ReadRune()
+				if err != nil {
+					return "", err
+				}
+
+				ct = append(ct, r)
+
+				if x > len(str)-1 {
+					break
+				}
+
+				fmt.Println(x, string(r), string(str))
+				if str[x] != r {
+					f = true
+					break
+				}
+			}
+
+			if f {
+				tmp = append(tmp, rn)
+				tmp = append(tmp, ct...)
+				continue
+			} else {
+				b.SeekR(b.Rpos() - 1)
+				return string(tmp), nil
+			}
+		} else {
+			tmp = append(tmp, rn)
+		}
+	}
+}
+
 func (b *Buffer) ReadString(delimiter byte) (string, error) {
 	var i []byte
 	for {

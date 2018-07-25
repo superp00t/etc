@@ -1,7 +1,3 @@
-# Use compression (optional)
-# 
-# use zlib-compress
-
 struct exampleData {
   uint64      time_ms
   uuid        id

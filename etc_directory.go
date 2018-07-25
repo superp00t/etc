@@ -135,6 +135,14 @@ func (d Path) Get(path string) (*Buffer, error) {
 	return d.GetSubFile(parseNixPath([]rune(path)))
 }
 
+func (d Path) MakeDirPath(path Path) error {
+	return os.MkdirAll(d.GetSub(path).Render(), 0700)
+}
+
+func (d Path) MakeDir(path string) error {
+	return d.MakeDirPath(ParseUnixPath(path))
+}
+
 func (d Path) Put(path string, data io.Reader) error {
 	e, err := d.Get(path)
 	if err == nil {

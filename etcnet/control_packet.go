@@ -1,5 +1,9 @@
 package etcnet
 
+import (
+	"time"
+)
+
 const (
 	// Constants
 	CONN_INIT   uint64 = 1
@@ -8,6 +12,7 @@ const (
 	CONN_DATA   uint64 = 4
 
 	// Control flags
+	CONTROL_ACQUIRE_TOKEN     uint8 = 1
 	CONTROL_PING              uint8 = 1 << 1
 	CONTROL_PAYLOAD           uint8 = 1 << 2
 	CONTROL_INITIALIZE_STREAM uint8 = 1 << 3
@@ -34,14 +39,14 @@ type ControlPacket struct {
 
 	// Flags & CONTROL_ACK
 	Acking uint64
-	
+
 	// Flags & CONTROL_PAYLOAD
 	PayloadStreamReference uint64
-	PayloadData []byte
+	PayloadData            []byte
 }
 
 func (c ControlPacket) Flagged(f uint8) bool {
-	return c.Flags & f != 0
+	return c.Flags&f != 0
 }
 
 func (cp ControlPacket) Parse(b []byte) {
@@ -68,7 +73,7 @@ func (cp ControlPacket) Parse(b []byte) {
 		cp.PayloadStreamReference = i.ReadUint()
 		cp.PayloadData = i.ReadRemainder()
 	}
-	
+
 	i.Flush()
 	i = nil
 }
@@ -78,7 +83,7 @@ func (cp ControlPacket) Encode() []byte {
 	o.WriteUint(cp.MessageID)
 	o.WriteByte(cp.Flags)
 	o.WriteTime(cp.Time)
-	
+
 	if cp.Flagged(CONTROL_INITIALIZE_STREAM) {
 		o.WriteUTF8(cp.InitStreamKey)
 		o.WriteUint(cp.InitStreamID)
@@ -99,3 +104,6 @@ func (cp ControlPacket) Encode() []byte {
 
 	return o.Bytes()
 }
+
+
+

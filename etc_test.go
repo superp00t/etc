@@ -85,6 +85,28 @@ func TestBuffer(t *testing.T) {
 		t.Fatal("leb err 2")
 	}
 
+	bodyTest := FromString(`hello
+		world how are you doing
+		`)
+
+	str, err := bodyTest.ReadUntilToken("how")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if str != `hello
+		world ` {
+		t.Fatal("Invalid read", str)
+	}
+
+	str, err = bodyTest.ReadUntilToken("you")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if str != ` are ` {
+		t.Fatal("invalid read x2 \"" + str + "\"")
+	}
 }
 
 func buffertest(name string, e *Buffer, t *testing.T) {

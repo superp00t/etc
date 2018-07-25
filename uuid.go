@@ -12,10 +12,7 @@ import (
 
 type UUID [2]uint64
 
-var UUID_NULL UUID = UUID{
-	0x0000000000000000,
-	0x0000000000000000,
-}
+var UUID_NULL UUID = UUID{0, 0}
 
 func (g UUID) Big() *big.Int {
 	return big.NewInt(0).SetBytes(g.Bytes())
@@ -159,24 +156,4 @@ func ParseUUID(s string) (UUID, error) {
 	part2 := data.ReadUint64()
 
 	return UUID{part1, part2}, nil
-}
-
-func GenerateRandomUUID() UUID {
-	by := NewBuffer()
-	by.WriteRandom(16)
-
-	part1 := by.ReadBigUint64()
-	part2 := by.ReadBigUint64()
-
-	gu := UUID{part1, part2}
-	str := []rune(gu.String())
-
-	str[14] = '4'
-	str[19] = '8'
-
-	pr, err := ParseUUID(string(str))
-	if err != nil {
-		panic(err)
-	}
-	return pr
 }
