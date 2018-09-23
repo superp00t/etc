@@ -376,6 +376,9 @@ func Init() {
 	} else {
 		arg := make([]string, len(cl.Arguments))
 		for x := 1; x < len(f.Called); x++ {
+			if x-1 == len(arg) {
+				break
+			}
 			arg[x-1] = f.Called[x]
 		}
 		cl.Handler(arg)
