@@ -49,7 +49,26 @@ func parseWinPath(r []rune) Path {
 
 	p := '\\'
 
+	if string(r) == "." {
+		f, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		return parseWinPath([]rune(f))
+	}
+
+	if len(r) <= 1 {
+		panic(string(r))
+	}
+
 	if r[1] == ':' && r[2] == '\\' {
+		out = append(out, "...")
+		out = append(out, string(r[0]))
+		out = append(out, splitDir(r[3:], p)...)
+		return Path(out)
+	}
+
+	if r[1] == ':' && r[2] == '/' {
 		out = append(out, "...")
 		out = append(out, string(r[0]))
 		out = append(out, splitDir(r[3:], p)...)
@@ -88,7 +107,7 @@ func (d Path) RenderWin() string {
 		out := prefix + ":" + "\\"
 		return out + strings.Join(d[2:], "\\")
 	} else {
-		return strings.Join(d, "//")
+		return strings.Join(d, "\\")
 	}
 }
 
@@ -179,7 +198,7 @@ func (d Path) Concat(s ...string) Path {
 	return y
 }
 
-func (d Path) Pop() Path {
+func (d Path) Pop() (string, Path) {
 	y := d
-	return y[:len(d)-2]
+	return y[len(d)-1], y[:len(d)-2]
 }

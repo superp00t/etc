@@ -211,7 +211,6 @@ func (b *Buffer) ReadUntilToken(s string) (string, error) {
 					break
 				}
 
-				fmt.Println(x, string(r), string(str))
 				if str[x] != r {
 					f = true
 					break

@@ -6,7 +6,7 @@ import (
 )
 
 func _GENERATE_TOKEN() uint64 {
-
+	rand.Intn
 }
 
 func _GEN_DH_KEYPAIR() (*[32]byte, *[32]byte) {
@@ -32,6 +32,3 @@ func _DH_AGREEMENT(theirpub, mypriv *[32]byte) *[32]byte {
 
 	return out
 }
-
-
-

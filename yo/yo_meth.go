@@ -2,6 +2,7 @@ package yo
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"os"
 	"time"
 )
@@ -12,6 +13,14 @@ func Println(args ...interface{}) {
 		Time:  time.Now(),
 		Data:  fmt.Sprintln(args...),
 	})
+}
+
+func Spew(v interface{}) {
+	Println(spew.Sdump(v))
+}
+
+func Puke(v interface{}) {
+	Fatal(spew.Sdump(v))
 }
 
 func Ok(args ...interface{}) {

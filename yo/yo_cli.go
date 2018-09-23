@@ -47,6 +47,51 @@ type FlagParser struct {
 	Routines map[string]*Routine
 }
 
+func GetValue(s string) interface{} {
+	l := f.Defs[s]
+	if l == nil {
+		return l
+	}
+
+	return l.Value
+}
+
+func Int64G(s string) int64 {
+	i := GetValue(s)
+	if i == nil {
+		return 0
+	}
+
+	return i.(int64)
+}
+
+func StringG(s string) string {
+	i := GetValue(s)
+	if i == nil {
+		return ""
+	}
+
+	return i.(string)
+}
+
+func Float64G(s string) float64 {
+	i := GetValue(s)
+	if i == nil {
+		return 0
+	}
+
+	return i.(float64)
+}
+
+func BoolG(s string) bool {
+	i := GetValue(s)
+	if i == nil {
+		return false
+	}
+
+	return i.(bool)
+}
+
 func (d *Def) parseValue(s string) error {
 	var err error
 	switch d.Type {
@@ -58,6 +103,8 @@ func (d *Def) parseValue(s string) error {
 		d.Value, err = strconv.ParseFloat(s, 64)
 	case Duration:
 		d.Value, err = time.ParseDuration(s)
+	case Bool:
+		d.Value = true
 	default:
 		return fmt.Errorf("unknown type %d", d.Type)
 	}
@@ -75,22 +122,19 @@ func getValue(in *etc.Buffer) string {
 			break
 		}
 
-		if i == '=' {
-			continue
-		}
-
 		if i == ' ' && op == 0 {
 			op++
 			continue
 		}
 
-		if i == ' ' {
+		if i == ' ' && op != 0 {
 			break
 		}
 
 		if i == 0 {
 			break
 		}
+
 		o = append(o, i)
 		op++
 	}
@@ -107,6 +151,10 @@ func (f *FlagParser) Parse(s string) error {
 		chr, _, err := e.ReadRune()
 		if err != nil {
 			goto flagend
+		}
+
+		if chr == ' ' {
+			continue
 		}
 
 		if chr == '-' {
@@ -172,6 +220,19 @@ func (f *FlagParser) Parse(s string) error {
 				return fmt.Errorf("unknown flag shorthand %s", short)
 			}
 
+			if f.Defs[short].Type == Bool {
+				f.Defs[short].Value = true
+				goto cont
+			}
+
+			data := getValue(e)
+
+			err = f.Defs[short].parseValue(data)
+			if err != nil {
+				return err
+			}
+
+			goto cont
 		} else {
 			e.SeekR(g)
 			f.Called = append(f.Called, getValue(e))
@@ -179,6 +240,7 @@ func (f *FlagParser) Parse(s string) error {
 		}
 	}
 flagend:
+
 	return nil
 }
 
@@ -191,6 +253,7 @@ func setup() {
 }
 
 func FSpew() {
+	setup()
 	fmt.Println(spew.Sdump(f))
 }
 
@@ -245,6 +308,8 @@ func (s *FlagParser) SortedDefs() []string {
 }
 
 func Init() {
+	setup()
+
 	if err := f.Parse(strings.Join(os.Args[1:], " ")); err != nil {
 		Fatal(err)
 	}
@@ -288,14 +353,16 @@ func Init() {
 		}
 
 		fmt.Println()
-		color.Set(color.FgGreen)
-		fmt.Println("Options:")
-		color.Unset()
-		fmt.Println()
-
-		for _, v := range f.SortedDefs() {
-			fmt.Printf("  --%s, -%s\n\n   %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
+		if len(f.SortedDefs()) > 0 {
+			color.Set(color.FgGreen)
+			fmt.Println("Options:")
+			color.Unset()
 			fmt.Println()
+
+			for _, v := range f.SortedDefs() {
+				fmt.Printf("  --%s, -%s\n\n   %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
+				fmt.Println()
+			}
 		}
 		return
 	}
@@ -308,14 +375,16 @@ func Init() {
 		cl.Handler(nil)
 	} else {
 		arg := make([]string, len(cl.Arguments))
-		for x := 2; x < len(os.Args); x++ {
-			arg[x-2] = os.Args[x]
+		for x := 1; x < len(f.Called); x++ {
+			arg[x-1] = f.Called[x]
 		}
 		cl.Handler(arg)
 	}
 }
 
 func AddSubroutine(name string, arguments []string, description string, fn func([]string)) {
+	setup()
+
 	if name == "help" {
 		panic("Cannot override help function")
 	}

@@ -93,7 +93,9 @@ func (g UUID) TimeStitch() uint64 {
 }
 
 func (g UUID) Time() time.Time {
-	return time.Unix(0, int64(g.TimeStitch())*int64(time.Millisecond))
+	prec := g.TimeStitch() * 100
+
+	return time.Unix(0, int64(prec)).Add(12219292800 * time.Millisecond)
 }
 
 func (g UUID) Get_time_low() uint32 {
