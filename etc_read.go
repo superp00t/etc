@@ -180,6 +180,14 @@ func (b *Buffer) ReadFloat64() float64 {
 	return bits
 }
 
+func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
+	rpos := b.Rpos()
+	b.SeekR(off)
+	i, err := b.Read(p)
+	b.SeekR(rpos)
+	return i, err
+}
+
 func (b *Buffer) ReadUntilToken(s string) (string, error) {
 	tmp := []rune{}
 	str := []rune(s)

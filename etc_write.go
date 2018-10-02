@@ -136,6 +136,14 @@ func (b *Buffer) WriteBigInt(v *big.Int) {
 	b.EncodeSignedVarint(v)
 }
 
+func (b *Buffer) WriteAt(p []byte, off int64) (int, error) {
+	wpos := b.Wpos()
+	b.SeekW(off)
+	i, err := b.Write(p)
+	b.SeekR(wpos)
+	return i, err
+}
+
 func (b *Buffer) WriteBool(v bool) {
 	var bit uint8
 	if v {

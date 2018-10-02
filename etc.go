@@ -3,6 +3,8 @@ package etc
 import (
 	"crypto/sha512"
 	"encoding/base64"
+	"fmt"
+	"os"
 )
 
 type Buffer struct {
@@ -54,4 +56,19 @@ func (b *Buffer) Sha512Digest() []byte {
 
 func (e *Buffer) Close() error {
 	return e.backend.Close()
+}
+
+func (e *Buffer) Delete() error {
+	fd, ok := e.backend.(*fsBackend)
+	if !ok {
+		return fmt.Errorf("can't delet non-file Buffer")
+	}
+
+	e.backend.Close()
+
+	return os.Remove(fd.path)
+}
+
+func (e *Buffer) Size() int64 {
+	return e.backend.Size()
 }
