@@ -28,11 +28,11 @@ func GenerateRandomUUID() UUID {
 //Random random intergers
 func RandomBigInt(min, max *big.Int) *big.Int {
 	range_ := new(big.Int).Sub(max, min)
-	bi, err := rand.Int(rand.Reader, max)
+	bi, err := rand.Int(rand.Reader, range_)
 	if err != nil {
 		panic(err)
 	}
-	return new(big.Int).Add(range_, bi)
+	return new(big.Int).Add(min, bi)
 }
 
 func GenerateMiniGUID() uint64 {
