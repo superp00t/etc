@@ -129,10 +129,18 @@ func (d Path) Render() string {
 
 func TmpDirectory() Path {
 	if runtime.GOOS == "windows" {
-		return ParseSystemPath(os.Getenv("USERPROFILE") + "\\AppData\\Local")
+		return ParseSystemPath(os.Getenv("TEMP"))
 	}
 
 	return ParseSystemPath("/tmp/")
+}
+
+func LocalDirectory() Path {
+	if runtime.GOOS == "windows" {
+		return ParseSystemPath(os.Getenv("USERPROFILE") + "\\AppData\\Local")
+	}
+
+	return ParseSystemPath(os.Getenv("HOME") + "/.local/share/")
 }
 
 func (d Path) GetSub(p Path) Path {
@@ -177,6 +185,11 @@ func (d Path) Put(path string, data io.Reader) error {
 	}
 
 	return e.Close()
+}
+
+func (d Path) IsExtant() bool {
+	_, err := os.Stat(d.Render())
+	return err == nil
 }
 
 func (d Path) ExistsPath(p Path) bool {

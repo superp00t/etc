@@ -3,6 +3,7 @@ package etc
 import (
 	"crypto/rand"
 	"math/big"
+	"reflect"
 )
 
 func GenerateRandomUUID() UUID {
@@ -33,6 +34,16 @@ func RandomBigInt(min, max *big.Int) *big.Int {
 		panic(err)
 	}
 	return new(big.Int).Add(min, bi)
+}
+
+func RandomIndex(v interface{}) int {
+	if reflect.TypeOf(v).Kind() == reflect.Slice {
+		s := reflect.ValueOf(v)
+		bi := RandomBigInt(big.NewInt(0), big.NewInt(int64(s.Len())))
+		return int(bi.Uint64())
+	}
+
+	return 0
 }
 
 func GenerateMiniGUID() uint64 {
