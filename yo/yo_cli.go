@@ -244,7 +244,15 @@ flagend:
 	return nil
 }
 
-func setup() {
+func setup(s, l string) {
+	if s == "h" || l == "help" {
+		panic("You cannot override the help flags")
+	}
+
+	if s == "y" || l == "yo_level" {
+		panic("You can't overwrite the yo log level flags")
+	}
+
 	if f == nil {
 		f = new(FlagParser)
 		f.Defs = make(map[string]*Def)
@@ -253,33 +261,33 @@ func setup() {
 }
 
 func FSpew() {
-	setup()
+	setup("", "")
 	fmt.Println(spew.Sdump(f))
 }
 
 // Boolf cannot be true by default.
 func Boolf(short, long, description string) {
-	setup()
+	setup(short, long)
 	f.Defs[short] = &Def{Bool, long, description, false}
 }
 
 func Durationf(short, long, description string, t time.Duration) {
-	setup()
+	setup(short, long)
 	f.Defs[short] = &Def{Duration, long, description, t}
 }
 
 func Int64f(short, long, description string, def int64) {
-	setup()
+	setup(short, long)
 	f.Defs[short] = &Def{Int64, long, description, def}
 }
 
 func Float64f(short, long, description string, def float64) {
-	setup()
+	setup(short, long)
 	f.Defs[short] = &Def{Float64, long, description, def}
 }
 
 func Stringf(short, long, description, def string) {
-	setup()
+	setup(short, long)
 	f.Defs[short] = &Def{String, long, description, def}
 }
 
@@ -308,7 +316,9 @@ func (s *FlagParser) SortedDefs() []string {
 }
 
 func Init() {
-	setup()
+	setup("", "")
+
+	f.Defs["y"] = &Def{Int64, "yo_level", "log level", 0}
 
 	if err := f.Parse(strings.Join(os.Args[1:], " ")); err != nil {
 		Fatal(err)
@@ -322,10 +332,19 @@ func Init() {
 		f.Called = append(f.Called, "")
 	}
 
+	helpFlag := false
+
+	for _, v := range os.Args[1:] {
+		if v == "--help" || v == "-h" {
+			helpFlag = true
+			break
+		}
+	}
+
 	exeNameL := strings.Split(os.Args[0], string(os.PathSeparator))
 	exe := exeNameL[len(exeNameL)-1]
 	cl := f.Routines[call]
-	if cl == nil && call == "" || call == "help" {
+	if cl == nil && call == "" || call == "help" || helpFlag {
 		color.Set(color.FgGreen)
 		fmt.Printf("%s:\n\n", exe)
 		color.Unset()
@@ -363,6 +382,9 @@ func Init() {
 				fmt.Printf("  --%s, -%s\n\n   %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
 				fmt.Println()
 			}
+
+			fmt.Printf("  --%s, -%s\n\n   %s\n", "help", "h", "prints this message")
+			fmt.Println()
 		}
 		return
 	}
@@ -386,7 +408,7 @@ func Init() {
 }
 
 func AddSubroutine(name string, arguments []string, description string, fn func([]string)) {
-	setup()
+	setup("", "")
 
 	if name == "help" {
 		panic("Cannot override help function")
