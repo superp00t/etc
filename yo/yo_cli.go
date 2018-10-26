@@ -48,6 +48,10 @@ type FlagParser struct {
 }
 
 func GetValue(s string) interface{} {
+	if f == nil {
+		return nil
+	}
+
 	l := f.Defs[s]
 	if l == nil {
 		return nil
