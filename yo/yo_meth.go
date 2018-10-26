@@ -17,6 +17,7 @@ func (l *Lg) Log(ld LogData) {
 	y := Int64G("y")
 	if y == -1 {
 		l.Logger.Log(ld)
+		return
 	}
 
 	if l.Level <= y {
