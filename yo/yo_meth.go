@@ -14,7 +14,7 @@ type Lg struct {
 }
 
 func (l *Lg) Log(ld LogData) {
-	if l.Level >= Int64G("y") {
+	if l.Level <= Int64G("y") {
 		l.Logger.Log(ld)
 	}
 }

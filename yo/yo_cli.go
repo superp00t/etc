@@ -318,7 +318,8 @@ func (s *FlagParser) SortedDefs() []string {
 func Init() {
 	setup("", "")
 
-	f.Defs["y"] = &Def{Int64, "yo_level", "log level", 0}
+	f.Defs["y"] = &Def{Int64, "yo_level", "log level", int64(0)}
+	f.Defs["h"] = &Def{Bool, "help", "prints this message", false}
 
 	if err := f.Parse(strings.Join(os.Args[1:], " ")); err != nil {
 		Fatal(err)
@@ -332,19 +333,10 @@ func Init() {
 		f.Called = append(f.Called, "")
 	}
 
-	helpFlag := false
-
-	for _, v := range os.Args[1:] {
-		if v == "--help" || v == "-h" {
-			helpFlag = true
-			break
-		}
-	}
-
 	exeNameL := strings.Split(os.Args[0], string(os.PathSeparator))
 	exe := exeNameL[len(exeNameL)-1]
 	cl := f.Routines[call]
-	if cl == nil && call == "" || call == "help" || helpFlag {
+	if cl == nil && call == "" || call == "help" || BoolG("h") {
 		color.Set(color.FgGreen)
 		fmt.Printf("%s:\n\n", exe)
 		color.Unset()
@@ -367,7 +359,7 @@ func Init() {
 					}
 					color.Unset()
 				}
-				fmt.Printf("\n\n    %s\n\n", f.Routines[v].Description)
+				fmt.Printf("\n    %s\n", f.Routines[v].Description)
 			}
 		}
 
@@ -379,12 +371,9 @@ func Init() {
 			fmt.Println()
 
 			for _, v := range f.SortedDefs() {
-				fmt.Printf("  --%s, -%s\n\n   %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
+				fmt.Printf("  --%s, -%s\n    %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
 				fmt.Println()
 			}
-
-			fmt.Printf("  --%s, -%s\n\n   %s\n", "help", "h", "prints this message")
-			fmt.Println()
 		}
 		return
 	}
@@ -419,3 +408,4 @@ func AddSubroutine(name string, arguments []string, description string, fn func(
 func Main(description string, fn func(s []string)) {
 	AddSubroutine("", nil, description, fn)
 }
+	
