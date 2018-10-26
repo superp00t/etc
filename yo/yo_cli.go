@@ -50,7 +50,7 @@ type FlagParser struct {
 func GetValue(s string) interface{} {
 	l := f.Defs[s]
 	if l == nil {
-		return l
+		return nil
 	}
 
 	return l.Value
@@ -59,7 +59,7 @@ func GetValue(s string) interface{} {
 func Int64G(s string) int64 {
 	i := GetValue(s)
 	if i == nil {
-		return 0
+		return -1
 	}
 
 	return i.(int64)
@@ -408,4 +408,3 @@ func AddSubroutine(name string, arguments []string, description string, fn func(
 func Main(description string, fn func(s []string)) {
 	AddSubroutine("", nil, description, fn)
 }
-	
