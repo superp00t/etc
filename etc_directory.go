@@ -206,7 +206,8 @@ func Env(variable string) Path {
 }
 
 func (d Path) Concat(s ...string) Path {
-	y := d
+	y := make(Path, len(d))
+	copy(y, d)
 	y = append(y, s...)
 	return y
 }
