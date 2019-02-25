@@ -400,10 +400,9 @@ func Init() {
 			color.Set(color.FgGreen)
 			fmt.Println("Options:")
 			color.Unset()
-			fmt.Println()
 
 			for _, v := range f.SortedDefs() {
-				fmt.Printf("  --%s, -%s\n    %s\n", f.Defs[v].Long, v, f.Defs[v].Definition)
+				fmt.Printf("  --%s, -%s\n    %s\n    Default: %v\n", f.Defs[v].Long, v, f.Defs[v].Definition, f.Defs[v].Value)
 				fmt.Println()
 			}
 		}

@@ -2,6 +2,7 @@ package etc
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -143,6 +144,14 @@ func LocalDirectory() Path {
 	return ParseSystemPath(os.Getenv("HOME") + "/.local/share/")
 }
 
+func HomeDirectory() Path {
+	if runtime.GOOS == "windows" {
+		return ParseSystemPath(os.Getenv("USERPROFILE"))
+	}
+
+	return ParseSystemPath(os.Getenv("HOME"))
+}
+
 func (d Path) GetSub(p Path) Path {
 	return append(d, p...)
 }
@@ -162,12 +171,17 @@ func (d Path) Get(path string) (*Buffer, error) {
 	return d.GetSubFile(parseNixPath([]rune(path)))
 }
 
-func (d Path) MakeDirPath(path Path) error {
-	return os.MkdirAll(d.GetSub(path).Render(), 0700)
+// Mkdir accepts a variadic array of string elements, such as "dev", "random"
+func (d Path) Mkdir(elements ...string) error {
+	return d.Concat(elements...).MakeDir()
 }
 
-func (d Path) MakeDir(path string) error {
-	return d.MakeDirPath(ParseUnixPath(path))
+func (d Path) MakeDir() error {
+	return os.MkdirAll(d.Render(), 0700)
+}
+
+func (d Path) MakeDirPath(path Path) error {
+	return os.MkdirAll(d.GetSub(path).Render(), 0700)
 }
 
 func (d Path) Put(path string, data io.Reader) error {
@@ -190,6 +204,15 @@ func (d Path) Put(path string, data io.Reader) error {
 func (d Path) IsExtant() bool {
 	_, err := os.Stat(d.Render())
 	return err == nil
+}
+
+func (d Path) IsDirectory() bool {
+	fi, err := os.Stat(d.Render())
+	if err != nil {
+		return false
+	}
+
+	return fi.IsDir()
 }
 
 func (d Path) ExistsPath(p Path) bool {
@@ -215,4 +238,16 @@ func (d Path) Concat(s ...string) Path {
 func (d Path) Pop() (string, Path) {
 	y := d
 	return y[len(d)-1], y[:len(d)-2]
+}
+
+func (d Path) WriteAll(b []byte) error {
+	return ioutil.WriteFile(d.Render(), b, 0700)
+}
+
+func (d Path) ReadAll() ([]byte, error) {
+	return ioutil.ReadFile(d.Render())
+}
+
+func (d Path) Remove() error {
+	return os.RemoveAll(d.Render())
 }

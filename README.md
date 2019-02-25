@@ -1,12 +1,65 @@
 # Etc: Efficient Transfer Coding
 
-Etc is a binary encoding system. You can use its encoding functions manually, or you can use the format description language I call EtcSchema.
+Etc is a binary encoding system. It aims to be extremely fast, efficient and easy to use.
+
+It's comparable to Python's "unpack" module. You could also compare it to Protobuf, although Etc does not provide version constructs, and will break if you change the schema and try to decode old data.
 
 [Etc in Rust](https://github.com/superp00t/etc-rs)
 
 [Etc in JavaScript](https://github.com/superp00t/etc-js)
 
-## Example API usage
+## API demo
+
+While being faster than `encoding/json`, it provides a very similar reflection-based API.
+
+```go
+package main
+
+import (
+  "github.com/superp00t/etc"
+  "github.com/superp00t/etc/yo"
+)
+
+type Packet struct {
+  ID          uint64
+  Location    string
+  Coordinates [2]float32
+}
+
+func main() {
+  pc := Packet{
+    ID:       1,
+    Location: "Trinity",
+    Coordinates: [2]float32{
+      33.677216,
+      -106.476059,
+    },
+  }
+
+  data, err := etc.Marshal(pc)
+  if err != nil {
+    panic(err)
+  }
+
+  // Hex dump of "data":
+  //
+  // 01                     - ID
+  // 07                     - 7 byte long string
+  //   54 72 69 6e 69 74 79    "Trinity"
+  // 78 b5 06 42            - X coordinate float32
+  // be f3 d4 c2            - Y coordinate float32
+  yo.Spew(data)
+  
+  var out Packet
+
+  err = etc.Unmarshal(data, &out)
+  if err != nil {
+    panic(err)
+  }
+}
+```
+
+## Manual API
 
 ```go
 // Allocate empty buffer

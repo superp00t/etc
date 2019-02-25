@@ -6,14 +6,16 @@ import (
 )
 
 type dummyReader struct {
-	rdr  io.ReadSeeker
+	rdr  io.Reader
 	rpos int64
+	size int64
 }
 
-func DummyReader(r io.ReadSeeker) *Buffer {
+func DummyReader(r io.Reader, size int64) *Buffer {
 	dr := &dummyReader{
 		r,
 		0,
+		size,
 	}
 
 	e := NewBuffer()
@@ -37,11 +39,13 @@ func (d *dummyReader) Flush() error {
 }
 
 func (d *dummyReader) Seek(v int64) {
-	d.rdr.Seek(v, 0)
-	d.rpos = v
+	panic("cannot seek dummy reader")
 }
 
-func (d *dummyReader) SeekW(v int64) {}
+func (d *dummyReader) SeekW(v int64) {
+	panic("cannot seek dummy reader")
+}
+
 func (d *dummyReader) Wpos() int64 {
 	return 0
 }
@@ -54,7 +58,7 @@ func (d *dummyReader) Bytes() []byte {
 }
 
 func (d *dummyReader) Size() int64 {
-	return 0
+	return d.size
 }
 
 func (d *dummyReader) Close() error {

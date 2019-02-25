@@ -6,11 +6,11 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"reflect"
 	"strings"
 	"time"
+	"unicode/utf16"
 	"unicode/utf8"
-
-	"golang.org/x/text/encoding/unicode"
 )
 
 func (b *Buffer) Runes() []rune {
@@ -22,24 +22,43 @@ func (b *Buffer) ReadRune() (rune, int, error) {
 		return 0, 0, io.EOF
 	}
 
-	ahead := b.backend.Rpos()
-	by := make([]byte, 8)
-	b.Read(by)
+	var c [4]byte
 
-	c := by[0]
-	if c < utf8.RuneSelf {
-		b.backend.Seek(ahead + 1)
-		return rune(c), 1, nil
+	c[0] = b.ReadByte()
+
+	if uint32(c[0]) < 0x80 {
+		return rune(uint32(c[0])), 1, nil
 	}
 
-	r, n := utf8.DecodeRune(by)
-	b.backend.Seek(ahead + int64(n))
+	c[1] = b.ReadByte()
 
-	if r == utf8.RuneError {
-		return 0, 0, fmt.Errorf("Invalid utf8 sequence.")
+	if (uint32(c[1]) >= 0xb0) && (uint32(c[0]) < 0xe0) {
+		return rune(
+			((uint32(c[0]) & 0x1f) << 6) |
+				(uint32(c[1]) & 0x3f),
+		), 2, nil
 	}
 
-	return r, n, nil
+	c[2] = b.ReadByte()
+
+	if uint32(c[0]) >= 0xe0 && uint32(c[0]) < 0xf0 {
+		return rune(
+			((uint32(c[0]) & 0xf) << 12) |
+				((uint32(c[1]) & 0x3f) << 6) |
+				(uint32(c[2]) & 0x3f)), 3, nil
+	}
+
+	c[3] = b.ReadByte()
+
+	if (uint32(c[0]) & 0x8) == 0 {
+		return rune(
+			((uint32(c[0]) & 0x7) << 18) |
+				((uint32(c[1]) & 0x3f) << 12) |
+				((uint32(c[2]) & 0x3f) << 6) |
+				(uint32(c[3]) & 0x3f)), 4, nil
+	}
+
+	return 0, 0, fmt.Errorf("etc: invalid UTF-8 character")
 }
 
 func (b *Buffer) ReadInvertedString(l int) string {
@@ -102,13 +121,13 @@ func (b *Buffer) Read(buf []byte) (int, error) {
 }
 
 func (b *Buffer) ReadWChar(ln int) string {
-	dec := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
-	out, err := dec.Bytes(b.ReadBytes(ln))
-	if err != nil {
-		return ""
+	char := make([]uint16, ln)
+
+	for i := 0; i < ln; i++ {
+		char[i] = b.ReadUint16()
 	}
 
-	return string(out)
+	return string(utf16.Decode(char))
 }
 
 func (b *Buffer) ReadBytes(ln int) []byte {
@@ -118,6 +137,83 @@ func (b *Buffer) ReadBytes(ln int) []byte {
 }
 
 /* Integer functions */
+func (b *Buffer) ReadTypedInt(fixed bool, bits int, signed, big bool, v interface{}) {
+	var val interface{}
+
+	if !fixed {
+		if signed {
+			val = b.ReadInt()
+		} else {
+			val = b.ReadUint()
+		}
+	} else {
+
+		switch bits {
+		case 8:
+			if signed {
+				val = b.ReadInt8()
+			} else {
+				val = b.ReadByte()
+			}
+		case 16:
+			if big {
+				if signed {
+					val = b.ReadBigInt16()
+				} else {
+					val = b.ReadBigUint16()
+				}
+			} else {
+				if signed {
+					val = b.ReadInt16()
+				} else {
+					val = b.ReadUint16()
+				}
+			}
+		case 32:
+			if big {
+				if signed {
+					val = b.ReadBigInt32()
+				} else {
+					val = b.ReadBigUint32()
+				}
+			} else {
+				if signed {
+					val = b.ReadInt32()
+				} else {
+					val = b.ReadUint32()
+				}
+			}
+		case 64:
+			if big {
+				if signed {
+					val = b.ReadBigInt64()
+				} else {
+					val = b.ReadBigUint64()
+				}
+			} else {
+				if signed {
+					val = b.ReadInt64()
+				} else {
+					val = b.ReadUint64()
+				}
+			}
+		}
+	}
+
+	reflect.ValueOf(v).Elem().Set(reflect.ValueOf(val))
+	// fmt.Println("Set data to", reflect.ValueOf(v).Elem().Interface())
+
+	// fmt.Println("Data =>", reflect.ValueOf(val).String())
+
+	// fmt.Println("Setting value of ", reflect.ValueOf(v).Elem().String())
+	// reflect.ValueOf(v).Elem().Set(reflect.ValueOf(val))
+	// fmt.Println("Set value of ", reflect.ValueOf(v).Elem().String())
+}
+
+func (b *Buffer) ReadInt8() int8 {
+	return int8(b.ReadByte())
+}
+
 func (b *Buffer) ReadInt64() int64 {
 	return int64(b.ReadUint64())
 }
@@ -257,7 +353,13 @@ func (b *Buffer) ReadString(delimiter byte) (string, error) {
 }
 
 func (b *Buffer) ReadUString() string {
-	return b.ReadUTF8()
+	str := b.ReadLimitedBytes()
+
+	if !validateUTF8(str) {
+		return ""
+	}
+
+	return string(str)
 }
 
 func (b *Buffer) ReadDate() time.Time {
@@ -293,6 +395,10 @@ func (b *Buffer) ReadCString() string {
 
 func (b *Buffer) ReadLimitedBytes() []byte {
 	ln := b.ReadUint()
+	if uint64(b.Available()) < ln {
+		return []byte{}
+	}
+
 	return b.ReadBytes(int(ln))
 }
 
@@ -367,4 +473,9 @@ func validateUTF8(data []byte) bool {
 
 func (b *Buffer) ToString() string {
 	return string(b.Bytes())
+}
+
+func runeSize(r rune) int {
+	_, sz := utf8.DecodeRuneInString(string([]rune{r}))
+	return sz
 }

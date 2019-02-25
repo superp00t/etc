@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"reflect"
 	"time"
 	"unicode/utf8"
 )
@@ -34,6 +35,80 @@ func (b *Buffer) WriteByte(v uint8) {
 
 func (b *Buffer) Write(buf []byte) (int, error) {
 	return b.backend.Write(buf)
+}
+
+func (b *Buffer) WriteTypedInt(fixed bool, bits int, signed, big bool, val interface{}) {
+	var v interface{}
+	value := reflect.ValueOf(val)
+	if value.Kind() == reflect.Ptr {
+		v = value.Elem().Interface()
+	} else {
+		v = val
+	}
+
+	if !fixed {
+		if signed {
+			b.WriteInt(v.(int64))
+		} else {
+			b.WriteUint(v.(uint64))
+		}
+		return
+	}
+
+	switch bits {
+	case 8:
+		if signed {
+			b.WriteInt8(v.(int8))
+		} else {
+			b.WriteByte(v.(byte))
+		}
+	case 16:
+		if big {
+			if signed {
+				b.WriteBigInt16(v.(int16))
+			} else {
+				b.WriteBigUint16(v.(uint16))
+			}
+		} else {
+			if signed {
+				b.WriteInt16(v.(int16))
+			} else {
+				b.WriteUint16(v.(uint16))
+			}
+		}
+	case 32:
+		if big {
+			if signed {
+				b.WriteBigInt32(v.(int32))
+			} else {
+				b.WriteBigUint32(v.(uint32))
+			}
+		} else {
+			if signed {
+				b.WriteInt32(v.(int32))
+			} else {
+				b.WriteUint32(v.(uint32))
+			}
+		}
+	case 64:
+		if big {
+			if signed {
+				b.WriteBigInt64(v.(int64))
+			} else {
+				b.WriteBigUint64(v.(uint64))
+			}
+		} else {
+			if signed {
+				b.WriteInt64(v.(int64))
+			} else {
+				b.WriteUint64(v.(uint64))
+			}
+		}
+	}
+}
+
+func (b *Buffer) WriteInt8(v int8) {
+	b.WriteByte(uint8(v))
 }
 
 func (b *Buffer) WriteInt16(v int16) {

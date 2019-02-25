@@ -2,6 +2,7 @@ package etc
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -223,9 +224,18 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	}
 
 	for i := 0; i < len(runes); i++ {
-		run, _, _ := e.ReadRune()
+		sz := runeSize(runes[i])
+		run, detected, err := e.ReadRune()
+		if err != nil && err != io.EOF {
+			t.Fatal(err)
+		}
+
+		if detected != sz {
+			t.Fatal(string(runes[i]), "expected", sz, "got", detected)
+		}
+
 		if run != runes[i] {
-			t.Fatal(name, "mismatch with", runes[i], "(got ", run, ")")
+			t.Fatal(name, string(runes[i]), "mismatch with", runes[i], "(got ", run, ")")
 		}
 	}
 
@@ -267,4 +277,127 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	}
 
 	fmt.Println(time.Since(bnch))
+}
+
+func TestReflection(t *testing.T) {
+	for _, v := range []struct {
+		Name  string
+		Value interface{}
+	}{
+		{
+			"Float64 buffer",
+			struct {
+				Key   string
+				Value []float64
+			}{
+				"Some coordinates",
+				[]float64{
+					33.677216,
+					-106.476059,
+				},
+			},
+		},
+
+		{
+			"Map encoding",
+			map[string]uint64{
+				"Sixty Three":                   64,
+				"Forty Nine":                    49,
+				"Neunzehnhundertneunundsiebzig": 1979,
+			},
+		},
+	} {
+
+		b1 := time.Now()
+		fmt.Println("encoding ", v.Name)
+		bytes, err := Marshal(v.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bench1 := time.Since(b1)
+		fmt.Println(spew.Sdump(bytes))
+
+		b2 := time.Now()
+		jBytes, err := json.Marshal(v.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		bench2 := time.Since(b2)
+
+		if bench2 < bench1 {
+			fmt.Println("JSON encoding faster for", v.Name)
+		} else {
+			fmt.Println("etc encoding faster for", v.Name)
+		}
+
+		fmt.Println(string(jBytes))
+	}
+
+	type TestPtr struct {
+		Data *int64
+	}
+
+	type TestRecord struct {
+		Key      string
+		Coords   [2]float32
+		Comments []string
+		XY       struct {
+			X struct {
+				Y int64
+			}
+		}
+
+		Ptr *TestPtr
+
+		Map map[string]int64
+	}
+
+	tr := TestRecord{
+		Key: "Trinity",
+		Coords: [2]float32{
+			33.677216,
+			-106.476059,
+		},
+		Comments: []string{
+			"hello",
+			"world",
+		},
+	}
+
+	tr.XY.X.Y = 50000
+	tr.Ptr = &TestPtr{}
+	i := int64(420)
+	tr.Ptr.Data = &i
+	tr.Map = make(map[string]int64)
+	tr.Map["Sixty Four"] = 64
+
+	b, err := Marshal(tr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("UNMARSHAL")
+
+	var tr2 TestRecord
+	err = Unmarshal(b, &tr2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(spew.Sdump(tr2))
+
+	fixed, err := Marshal(struct {
+		X FixedInt64
+		Y FixedInt64BE
+	}{
+		550,
+		550,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("fixed =>", spew.Sdump(fixed))
 }
