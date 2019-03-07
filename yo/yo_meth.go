@@ -15,7 +15,7 @@ type Lg struct {
 
 func (l *Lg) Log(ld LogData) {
 	y := Int64G("y")
-	if y == -1 {
+	if y == -1 && ld.Level != 0 {
 		l.Logger.Log(ld)
 		return
 	}
