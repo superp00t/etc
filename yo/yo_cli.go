@@ -126,16 +126,14 @@ func getValue(in *etc.Buffer) string {
 			break
 		}
 
-		if i == tok && op == 0 {
+		if i == 0 && op == 0 {
 			for {
 				i, _, err := in.ReadRune()
 				if err != nil {
 					return string(o)
 				}
 
-				Warn("reading token", i)
-
-				if i == tok {
+				if i == 0 {
 					return string(o)
 				} else {
 					o = append(o, i)
@@ -336,24 +334,13 @@ func (s *FlagParser) SortedDefs() []string {
 	return r
 }
 
-const tok = '`'
-
 func Init() {
 	setup("", "")
 
 	f.Defs["y"] = &Def{Int64, "yo_level", "log level", int64(0)}
 	f.Defs["h"] = &Def{Bool, "help", "prints this message", false}
 
-	var oArgs []string
-	for _, v := range os.Args[1:] {
-		if strings.Contains(v, " ") {
-			oArgs = append(oArgs, string(tok)+v+string(tok))
-		} else {
-			oArgs = append(oArgs, v)
-		}
-	}
-
-	if err := f.Parse(strings.Join(oArgs, " ")); err != nil {
+	if err := f.Parse(strings.Join(os.Args[1:], "\x00")); err != nil {
 		Fatal(err)
 	}
 

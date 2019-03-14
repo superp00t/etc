@@ -1,6 +1,7 @@
 package etc
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -184,6 +185,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 
 	e.WriteInvertedString(4, "enGB")
 	e.WriteInvertedString(4, "WoW")
+	e.WriteInvertedString(4, "x86")
 
 	for _, v := range strs {
 		e.WriteUTF8(v)
@@ -241,9 +243,14 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 
 	enGB := e.ReadInvertedString(4)
 	wow := e.ReadInvertedString(4)
+	arch := e.ReadBytes(4)
 
 	if enGB != "enGB" && wow != "WoW" {
 		t.Fatal("could not handle bliz-style inverted strings (got " + enGB + " " + wow + ")")
+	}
+
+	if !bytes.Equal(arch, []byte{'6', '8', 'x', 0}) {
+		t.Fatal("inverted string failed")
 	}
 
 	for i := 0; i < len(strs); i++ {
