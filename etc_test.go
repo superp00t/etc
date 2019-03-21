@@ -155,6 +155,10 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 		'™',
 		'🖕',
 		'𝕬',
+		'ß',
+		'Ö',
+		'イ',
+		'ษ',
 	}
 	var strs = []string{
 		"fffff",

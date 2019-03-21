@@ -18,47 +18,49 @@ func (b *Buffer) Runes() []rune {
 }
 
 func (b *Buffer) ReadRune() (rune, int, error) {
+	const (
+		// first byte of a 2-byte encoding starts 110 and carries 5 bits of data
+		b2Lead = 0xC0 // 1100 0000
+		b2Mask = 0x1F // 0001 1111
+
+		// first byte of a 3-byte encoding starts 1110 and carries 4 bits of data
+		b3Lead = 0xE0 // 1110 0000
+		b3Mask = 0x0F // 0000 1111
+
+		// first byte of a 4-byte encoding starts 11110 and carries 3 bits of data
+		b4Lead = 0xF0 // 1111 0000
+		b4Mask = 0x07 // 0000 0111
+
+		// non-first bytes start 10 and carry 6 bits of data
+		mbLead = 0x80 // 1000 0000
+		mbMask = 0x3F // 0011 1111
+	)
+
 	if b.Available() <= 0 {
 		return 0, 0, io.EOF
 	}
 
-	var c [4]byte
-
-	c[0] = b.ReadByte()
-
-	if uint32(c[0]) < 0x80 {
-		return rune(uint32(c[0])), 1, nil
+	header := b.ReadByte()
+	if header < mbLead {
+		return rune(header), 1, nil
+	} else if header < b3Lead {
+		b1 := b.ReadByte()
+		return rune(header&b2Mask)<<6 | rune(b1&mbMask), 2, nil
+	} else if header < b4Lead {
+		b1 := b.ReadByte()
+		b2 := b.ReadByte()
+		return rune(header&b3Mask)<<12 |
+			rune(b1&mbMask)<<6 |
+			rune(b2&mbMask), 3, nil
+	} else {
+		b1 := b.ReadByte()
+		b2 := b.ReadByte()
+		b3 := b.ReadByte()
+		return rune(header&b4Mask)<<18 |
+			rune(b1&mbMask)<<12 |
+			rune(b2&mbMask)<<6 |
+			rune(b3&mbMask), 4, nil
 	}
-
-	c[1] = b.ReadByte()
-
-	if (uint32(c[1]) >= 0xb0) && (uint32(c[0]) < 0xe0) {
-		return rune(
-			((uint32(c[0]) & 0x1f) << 6) |
-				(uint32(c[1]) & 0x3f),
-		), 2, nil
-	}
-
-	c[2] = b.ReadByte()
-
-	if uint32(c[0]) >= 0xe0 && uint32(c[0]) < 0xf0 {
-		return rune(
-			((uint32(c[0]) & 0xf) << 12) |
-				((uint32(c[1]) & 0x3f) << 6) |
-				(uint32(c[2]) & 0x3f)), 3, nil
-	}
-
-	c[3] = b.ReadByte()
-
-	if (uint32(c[0]) & 0x8) == 0 {
-		return rune(
-			((uint32(c[0]) & 0x7) << 18) |
-				((uint32(c[1]) & 0x3f) << 12) |
-				((uint32(c[2]) & 0x3f) << 6) |
-				(uint32(c[3]) & 0x3f)), 4, nil
-	}
-
-	return 0, 0, fmt.Errorf("etc: invalid UTF-8 character")
 }
 
 func (b *Buffer) ReadInvertedString(l int) string {

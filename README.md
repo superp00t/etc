@@ -1,8 +1,10 @@
 # Etc: Efficient Transfer Coding
 
+[![license](https://img.shields.io/badge/License-MIT-blue.svg)(LICENSE)
+
 Etc is a binary encoding system. It aims to be extremely fast, efficient and easy to use.
 
-It's comparable to Python's "unpack" module. You could also compare it to Protobuf, although Etc does not provide version constructs, and will break if you change the schema and try to decode old data.
+It's comparable to Python's "struct" module. You could also compare it to Protobuf, although Etc does not provide version constructs, and will break if you change the schema and try to decode old data.
 
 [Etc in Rust](https://github.com/superp00t/etc-rs)
 
