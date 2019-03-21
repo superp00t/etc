@@ -1,6 +1,6 @@
 # Etc: Efficient Transfer Coding
 
-[![license](https://img.shields.io/badge/License-MIT-blue.svg)(LICENSE)
+[![license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Etc is a binary encoding system. It aims to be extremely fast, efficient and easy to use.
 
