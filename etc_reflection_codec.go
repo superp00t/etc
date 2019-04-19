@@ -110,7 +110,7 @@ func intClass(v interface{}) (underlying interface{}, isInt bool, fixed bool, bi
 		underlying = uint16(m)
 	case FixedUint32BE:
 		big = true
-		bits = 32
+		bits = 32	
 		signed = false
 		fixed = true
 		underlying = uint32(m)
@@ -132,6 +132,12 @@ func intClass(v interface{}) (underlying interface{}, isInt bool, fixed bool, bi
 		signed = true
 		fixed = false
 		underlying = m
+	case uint8:
+		big = false
+		bits = 8
+		signed = false
+		fixed = true
+		underlying = uint8(m)
 	default:
 		isInt = false
 	}
@@ -150,6 +156,8 @@ func (e *Encoder) Encode(v interface{}) error {
 
 	// Check non-int types
 	switch object.Kind() {
+	case reflect.Uint8:
+		e.WriteByte(uint8(object.Uint()))
 	case reflect.Ptr:
 		return e.Encode(object.Elem().Interface())
 	case reflect.Struct:
@@ -262,6 +270,8 @@ func (d *Decoder) Decode(v interface{}) error {
 		}
 
 		switch object.Elem().Kind() {
+		case reflect.Uint8:
+			reflect.ValueOf(v).Elem().SetUint(uint64(d.ReadByte()))
 		case reflect.Ptr:
 			iface := object.Elem()
 
