@@ -141,14 +141,14 @@ func getValue(in *etc.Buffer) string {
 			}
 		}
 
-		if i == ' ' && op == 0 {
-			op++
-			continue
-		}
+		// if i == ' ' && op == 0 {
+		// 	op++
+		// 	continue
+		// }
 
-		if i == ' ' && op != 0 {
-			break
-		}
+		// if i == ' ' && op != 0 {
+		// 	break
+		// }
 
 		if i == 0 {
 			break
@@ -172,9 +172,9 @@ func (f *FlagParser) Parse(s string) error {
 			goto flagend
 		}
 
-		if chr == ' ' {
-			continue
-		}
+		// if chr == ' ' {
+		// 	continue
+		// }
 
 		if chr == '-' {
 			chr2, _, err := e.ReadRune()
@@ -334,6 +334,12 @@ func (s *FlagParser) SortedDefs() []string {
 	return r
 }
 
+func GetExe() string {
+	exeNameL := strings.Split(os.Args[0], string(os.PathSeparator))
+	exe := exeNameL[len(exeNameL)-1]
+	return exe
+}
+
 func Init() {
 	setup("", "")
 
@@ -352,52 +358,22 @@ func Init() {
 		f.Called = append(f.Called, "")
 	}
 
-	exeNameL := strings.Split(os.Args[0], string(os.PathSeparator))
-	exe := exeNameL[len(exeNameL)-1]
+	exe := GetExe()
 	cl := f.Routines[call]
 	if cl == nil && call == "" || call == "help" || BoolG("h") {
-		color.Set(color.FgGreen)
-		fmt.Printf("%s:\n\n", exe)
-		color.Unset()
-		for _, v := range f.SortedRoutines() {
-			if v == "" {
-				color.Set(color.FgCyan)
-				fmt.Printf("  %s\n\n", f.Routines[v].Description)
-				color.Set(color.FgGreen)
-				fmt.Printf("Subcommands:\n\n")
-				color.Unset()
-			} else {
-				fmt.Printf("  %s ", exe)
-				color.Set(color.FgCyan)
-				fmt.Printf("%s ", v)
-				color.Unset()
-				if len(f.Routines[v].Arguments) > 0 {
-					color.Set(color.FgHiBlue)
-					for _, arg := range f.Routines[v].Arguments {
-						fmt.Printf("[%s] ", arg)
-					}
-					color.Unset()
-				}
-				fmt.Printf("\n    %s\n", f.Routines[v].Description)
-			}
-		}
-
-		fmt.Println()
-		if len(f.SortedDefs()) > 0 {
-			color.Set(color.FgGreen)
-			fmt.Println("Options:")
-			color.Unset()
-
-			for _, v := range f.SortedDefs() {
-				fmt.Printf("  --%s, -%s\n    %s\n    Default: %v\n", f.Defs[v].Long, v, f.Defs[v].Definition, f.Defs[v].Value)
-				fmt.Println()
-			}
-		}
+		f.Help(exe)
 		return
 	}
 
 	if cl == nil {
-		Fatal("No handler for routine: \"" + call + "\"")
+		// run with main handler.
+		mn := f.Routines[""]
+		if mn != nil {
+			mn.Handler(f.Called)
+			return
+		} else {
+			Fatal("No handler for routine: \"" + call + "\"")
+		}
 	}
 
 	if call == "" {
@@ -425,4 +401,78 @@ func AddSubroutine(name string, arguments []string, description string, fn func(
 
 func Main(description string, fn func(s []string)) {
 	AddSubroutine("", nil, description, fn)
+}
+
+func MainArgs(arguments []string, description string, fn func([]string)) {
+	AddSubroutine("", arguments, description, fn)
+}
+
+func (f *FlagParser) Help(exe string) {
+	color.Set(color.FgGreen)
+	fmt.Printf("%s:\n\n", exe)
+	color.Unset()
+
+	subcommands := 0
+
+	for _, v := range f.SortedRoutines() {
+		if v != "" {
+			subcommands++
+		}
+	}
+
+	for _, v := range f.SortedRoutines() {
+		if v == "" {
+			color.Set(color.FgCyan)
+			fmt.Printf("  %s\n", f.Routines[v].Description)
+			color.Set(color.FgGreen)
+			if subcommands > 0 {
+				fmt.Printf("\nSubcommands:\n\n")
+			}
+			color.Unset()
+		} else {
+			fmt.Printf("  %s ", exe)
+			color.Set(color.FgCyan)
+			fmt.Printf("%s ", v)
+			color.Unset()
+			if len(f.Routines[v].Arguments) > 0 {
+				color.Set(color.FgHiBlue)
+				for _, arg := range f.Routines[v].Arguments {
+					fmt.Printf("[%s] ", arg)
+				}
+				color.Unset()
+			}
+			fmt.Printf("\n    %s\n", f.Routines[v].Description)
+		}
+	}
+
+	fmt.Println()
+	if len(f.SortedDefs()) > 0 {
+		color.Set(color.FgGreen)
+		fmt.Println("Options:")
+		color.Unset()
+
+		for _, v := range f.SortedDefs() {
+			fmt.Printf("  --%s, -%s\n    %s\n    value: %v\n", f.Defs[v].Long, v, f.Defs[v].Definition, f.Defs[v].Value)
+			fmt.Println()
+		}
+	}
+}
+
+func Help() {
+	f.Help(GetExe())
+	os.Exit(1)
+}
+
+func Confirm(message string) {
+	Println(message, "[y/n?]")
+
+	var input [1]byte
+	os.Stdin.Read(input[:])
+
+	switch input[0] {
+	case 0x0A, 'y', 'Y':
+		return
+	default:
+		os.Exit(1)
+	}
 }

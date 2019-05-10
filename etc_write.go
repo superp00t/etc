@@ -189,7 +189,7 @@ func (b *Buffer) WriteFloat64(v float64) {
 	b.WriteUint64(math.Float64bits(v))
 }
 
-func (b *Buffer) WriteRandom(i int) {
+func (b *Buffer) WriteRandom(i int) *Buffer {
 	by := make([]byte, i)
 	_, err := io.ReadFull(rand.Reader, by)
 	if err != nil {
@@ -197,6 +197,7 @@ func (b *Buffer) WriteRandom(i int) {
 	}
 
 	b.Write(by)
+	return b
 }
 
 func (b *Buffer) WriteUint(v uint64) {

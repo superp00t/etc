@@ -110,7 +110,7 @@ func intClass(v interface{}) (underlying interface{}, isInt bool, fixed bool, bi
 		underlying = uint16(m)
 	case FixedUint32BE:
 		big = true
-		bits = 32	
+		bits = 32
 		signed = false
 		fixed = true
 		underlying = uint32(m)
@@ -331,11 +331,7 @@ func (d *Decoder) Decode(v interface{}) error {
 			sz := int(d.ReadUint())
 			if object.Elem().IsNil() {
 				newMap := reflect.MakeMap(object.Elem().Type())
-				fmt.Println("Type of new map", newMap.Type())
-				fmt.Println("Type of new map", newMap.Type().Elem())
 				object.Elem().Set(newMap)
-				fmt.Println(object.Elem().Type())
-				fmt.Println(object.Elem().IsNil())
 			}
 
 			kt := object.Elem().Type().Key()

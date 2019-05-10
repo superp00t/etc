@@ -61,6 +61,8 @@ func main() {
 }
 ```
 
+Etc also includes cross-platform utilities for easy directory manipulation.
+
 ## Manual API
 
 ```go

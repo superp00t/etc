@@ -1,6 +1,7 @@
 package etc
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -286,6 +287,50 @@ func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 	return i, err
 }
 
+func (b *Buffer) Find(str []byte) (int64, error) {
+	const bufSize = 4096 * 2
+
+	var dat [bufSize]byte
+	var scanBuf = make([]byte, len(str))
+
+	for {
+		pos := b.Rpos()
+
+		i, err := b.Read(dat[:])
+		if err != nil && err != io.EOF {
+			return 0, err
+		}
+
+		npos := b.Rpos()
+
+		for x := 0; x < i; x++ {
+			u := dat[x]
+
+			if u == str[0] {
+				b.SeekR(pos + int64(x))
+				b.Read(scanBuf)
+				if bytes.Equal(scanBuf, str) {
+					return pos + int64(x), nil
+				} else {
+					b.SeekR(npos)
+				}
+			}
+		}
+
+		if err == io.EOF {
+			return 0, err
+		}
+
+		for x := 0; x < bufSize; x++ {
+			dat[x] = 0
+		}
+
+		for x := 0; x < len(str); x++ {
+			scanBuf[x] = 0
+		}
+	}
+}
+
 func (b *Buffer) ReadUntilToken(s string) (string, error) {
 	tmp := []rune{}
 	str := []rune(s)
@@ -364,6 +409,7 @@ func (b *Buffer) ReadUString() string {
 	return string(str)
 }
 
+// ReadDate returns a timestamp based on
 func (b *Buffer) ReadDate() time.Time {
 	return time.Unix(0, int64(b.ReadUint())*int64(time.Millisecond))
 }

@@ -1,12 +1,18 @@
 package etc
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"runtime"
+	"path/filepath"
 	"strings"
+	"time"
 )
+
+func Env(key string) Path {
+	return ParseSystemPath(os.Getenv(key))
+}
 
 type Path []string
 
@@ -90,15 +96,6 @@ func parseNixPath(r []rune) Path {
 	return splitDir(r, '/')
 }
 
-func ParseSystemPath(s string) Path {
-	r := []rune(s)
-	if runtime.GOOS == "windows" {
-		return parseWinPath(r)
-	}
-
-	return parseNixPath(r)
-}
-
 func (d Path) RenderWin() string {
 	if d[0] == "..." {
 		prefix := strings.ToUpper(d[1])
@@ -118,38 +115,6 @@ func (d Path) RenderUnix() string {
 	}
 
 	return strings.Join(d, "/")
-}
-
-func (d Path) Render() string {
-	if runtime.GOOS == "windows" {
-		return d.RenderWin()
-	}
-
-	return d.RenderUnix()
-}
-
-func TmpDirectory() Path {
-	if runtime.GOOS == "windows" {
-		return ParseSystemPath(os.Getenv("TEMP"))
-	}
-
-	return ParseSystemPath("/tmp/")
-}
-
-func LocalDirectory() Path {
-	if runtime.GOOS == "windows" {
-		return ParseSystemPath(os.Getenv("USERPROFILE") + "\\AppData\\Local")
-	}
-
-	return ParseSystemPath(os.Getenv("HOME") + "/.local/share/")
-}
-
-func HomeDirectory() Path {
-	if runtime.GOOS == "windows" {
-		return ParseSystemPath(os.Getenv("USERPROFILE"))
-	}
-
-	return ParseSystemPath(os.Getenv("HOME"))
 }
 
 func (d Path) GetSub(p Path) Path {
@@ -182,6 +147,44 @@ func (d Path) MakeDir() error {
 
 func (d Path) MakeDirPath(path Path) error {
 	return os.MkdirAll(d.GetSub(path).Render(), 0700)
+}
+
+func (d Path) String() string {
+	return d.Render()
+}
+
+func (d Path) DiskStatus() *DiskStatus {
+	dsk, err := GetDiskStatus(d.Render())
+	if err != nil {
+		panic(fmt.Errorf("%s: %s", d, err))
+	}
+	return dsk
+}
+
+func (d Path) Free() uint64 {
+	return d.DiskStatus().Free
+}
+
+func (d Path) Stat() os.FileInfo {
+	fi, _ := os.Stat(d.Render())
+	return fi
+}
+
+func (d Path) Time() time.Time {
+	return d.Stat().ModTime()
+}
+
+func (d Path) Size() uint64 {
+	if d.IsDirectory() == false {
+		return uint64(d.Stat().Size())
+	}
+
+	i, _ := dirSize(d.Render())
+	return uint64(i)
+}
+
+func (d Path) DiskUsed() uint64 {
+	return d.DiskStatus().Used
 }
 
 func (d Path) Put(path string, data io.Reader) error {
@@ -224,10 +227,7 @@ func (d Path) Exists(p string) bool {
 	return d.ExistsPath(parseNixPath([]rune(p)))
 }
 
-func Env(variable string) Path {
-	return ParseSystemPath(os.Getenv(variable))
-}
-
+// Concat applies the path with a variadic list of path elements, and returns it.
 func (d Path) Concat(s ...string) Path {
 	y := make(Path, len(d))
 	copy(y, d)
@@ -250,4 +250,53 @@ func (d Path) ReadAll() ([]byte, error) {
 
 func (d Path) Remove() error {
 	return os.RemoveAll(d.Render())
+}
+
+func (d Path) LRU() (string, error) {
+	if d.IsDirectory() == false {
+		return "", fmt.Errorf("etc: cannot get LRU of a non-directory")
+	}
+
+	fis, err := ioutil.ReadDir(d.Render())
+	if err != nil {
+		return "", err
+	}
+
+	if len(fis) == 0 {
+		return "", fmt.Errorf("etc: no directory children in %s", d)
+	}
+
+	now := time.Now()
+	var oldest *os.FileInfo
+
+	for _, v := range fis {
+		if oldest == nil {
+			oldest = &v
+			continue
+		}
+
+		old := *oldest
+
+		if now.Sub(v.ModTime()) > now.Sub(old.ModTime()) {
+			oldest = &v
+		}
+	}
+
+	old := *oldest
+
+	return old.Name(), nil
+}
+
+func dirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
 }

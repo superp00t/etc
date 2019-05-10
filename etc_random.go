@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"math/big"
 	"reflect"
+	"time"
 )
 
 func GenerateRandomUUID() UUID {
@@ -36,16 +37,24 @@ func RandomBigInt(min, max *big.Int) *big.Int {
 	return new(big.Int).Add(min, bi)
 }
 
+func RandomInt(min, max int) int {
+	return int(RandomInt64(int64(min), int64(max)))
+}
+
+func RandomInt64(min, max int64) int64 {
+	bi := RandomBigInt(big.NewInt(min), big.NewInt(max))
+	return bi.Int64()
+}
+
+func RandomDuration(min, max time.Duration) time.Duration {
+	return time.Duration(RandomInt64(int64(min), int64(max)))
+}
+
 func RandomIndex(v interface{}) int {
 	if reflect.TypeOf(v).Kind() == reflect.Slice {
 		s := reflect.ValueOf(v)
-		bi := RandomBigInt(big.NewInt(0), big.NewInt(int64(s.Len())))
-		return int(bi.Uint64())
+		return RandomInt(0, s.Len())
 	}
 
-	return 0
-}
-
-func GenerateMiniGUID() uint64 {
 	return 0
 }
