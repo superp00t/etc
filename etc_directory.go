@@ -6,12 +6,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
 
 func Env(key string) Path {
-	return ParseSystemPath(os.Getenv(key))
+	// check if we're using MSYS (which messes with these vars)
+	path := os.Getenv(key)
+	if os.Getenv("MSYSTEM") != "" {
+		path = strings.Replace(path, "/", "\\", -1)
+	}
+
+	return ParseSystemPath(path)
 }
 
 type Path []string
@@ -68,6 +75,17 @@ func parseWinPath(r []rune) Path {
 		panic(string(r))
 	}
 
+	// MSYS-style path?
+	if r[0] == '/' && r[2] == '/' {
+		out = []string{
+			"...",
+			strings.ToUpper(string(r[1])),
+		}
+
+		out = append(out, []string(parseNixPath(r[3:]))...)
+		return Path(out)
+	}
+
 	if r[1] == ':' && r[2] == '\\' {
 		out = append(out, "...")
 		out = append(out, string(r[0]))
@@ -99,7 +117,7 @@ func parseNixPath(r []rune) Path {
 func (d Path) RenderWin() string {
 	if d[0] == "..." {
 		prefix := strings.ToUpper(d[1])
-		if prefix == "root" {
+		if d[1] == "root" {
 			prefix = "C"
 		}
 		out := prefix + ":" + "\\"
@@ -236,6 +254,14 @@ func (d Path) Concat(s ...string) Path {
 }
 
 func (d Path) Pop() (string, Path) {
+	if len(d) == 0 {
+		return "", nil
+	}
+
+	if len(d) == 1 {
+		return d[0], nil
+	}
+
 	y := d
 	return y[len(d)-1], y[:len(d)-2]
 }
@@ -252,6 +278,7 @@ func (d Path) Remove() error {
 	return os.RemoveAll(d.Render())
 }
 
+// LRU returns the least-recently modified file in a directory.
 func (d Path) LRU() (string, error) {
 	if d.IsDirectory() == false {
 		return "", fmt.Errorf("etc: cannot get LRU of a non-directory")
@@ -299,4 +326,52 @@ func dirSize(path string) (int64, error) {
 		return err
 	})
 	return size, err
+}
+
+// Gopath returns the path of local Go folder. Panics if one cannot be found.
+func Gopath() Path {
+	if os.Getenv("GOPATH") != "" {
+		return Env("GOPATH")
+	}
+
+	godir := HomeDirectory().Concat("go")
+
+	return godir
+}
+
+func Import(path string) Path {
+	return Gopath().Concat("src").Concat(strings.Split(path, "/")...)
+}
+
+// Goroot attempts to finds your Go installation, panics if one cannot be found.
+func Goroot() Path {
+	if os.Getenv("GOROOT") != "" {
+		return Env("GOROOT")
+	}
+
+	//guessing
+	switch runtime.GOOS {
+	case "windows":
+		gr := ParseSystemPath("C:\\Go")
+		if !gr.IsExtant() || !gr.IsDirectory() {
+			goto fail
+		}
+
+		return gr
+	default:
+		guess := []string{
+			"/usr/lib/go/",
+			"/usr/local/go/",
+		}
+
+		for _, v := range guess {
+			gr := ParseSystemPath(v)
+			if gr.IsExtant() {
+				return gr
+			}
+		}
+	}
+
+fail:
+	panic("etc: could not ascertain GOROOT. Try setting this environment variable to the location of your Go installation if this error persists.")
 }

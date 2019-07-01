@@ -409,11 +409,12 @@ func (b *Buffer) ReadUString() string {
 	return string(str)
 }
 
-// ReadDate returns a timestamp based on
+// ReadDate returns a timestamp based on milliseconds
 func (b *Buffer) ReadDate() time.Time {
 	return time.Unix(0, int64(b.ReadUint())*int64(time.Millisecond))
 }
 
+// ReadTime returns a timestamp based on nanoseconds
 func (b *Buffer) ReadTime() time.Time {
 	return time.Unix(0, b.ReadInt())
 }

@@ -15,6 +15,10 @@ func TmpDirectory() Path {
 	return ParseSystemPath("/tmp/")
 }
 
+func Root() Path {
+	return ParseSystemPath("/")
+}
+
 func LocalDirectory() Path {
 	return ParseSystemPath(os.Getenv("HOME") + "/.local/share/")
 }

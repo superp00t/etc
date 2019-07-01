@@ -199,7 +199,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	e.WriteUUID(u)
 	fmt.Println(e.Len())
 
-	tfs := "testityeah"
+	tfs := "testing some freaking strings"
 	e.WriteFixedString(10, tfs)
 
 	if stt := e.ReadFixedString(10); stt != "testing" {
@@ -412,3 +412,15 @@ func TestReflection(t *testing.T) {
 
 	fmt.Println("fixed =>", spew.Sdump(fixed))
 }
+
+func TestWindowsPlatform(t *testing.T) {
+	// MSYS-style paths must be parsed correctly
+	src := "/c/Windows/System32/"
+
+	path := ParseSystemPath(src)
+	fmt.Println(spew.Sdump([]string(path)))
+}
+
+// func TestDir(t *testing.T) {
+// 	fmt.Println(spew.Sdump([]string(Gopath())))
+// }

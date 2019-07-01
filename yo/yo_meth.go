@@ -123,7 +123,7 @@ func Fatalf(f string, args ...interface{}) {
 		Time:  time.Now(),
 		Data:  fmt.Sprintf(f, args...),
 	})
-	os.Exit(-1)
+	os.Exit(1)
 }
 
 func Fatal(args ...interface{}) {
@@ -132,5 +132,5 @@ func Fatal(args ...interface{}) {
 		Time:  time.Now(),
 		Data:  fmt.Sprintln(args...),
 	})
-	os.Exit(-1)
+	os.Exit(1)
 }

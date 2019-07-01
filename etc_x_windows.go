@@ -16,6 +16,10 @@ func ParseSystemPath(s string) Path {
 	return parseWinPath([]rune(s))
 }
 
+func Root() Path {
+	return ParseSystemPath("C:\\")
+}
+
 func TmpDirectory() Path {
 	return Env("TEMP")
 }
