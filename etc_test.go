@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -31,7 +32,7 @@ func getRandomFile() string {
 func TestBuffer(t *testing.T) {
 	t1, err := FileController(getRandomFile())
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 
 	t2 := NewBuffer()
@@ -200,7 +201,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	fmt.Println(e.Len())
 
 	tfs := "testing some freaking strings"
-	e.WriteFixedString(10, tfs)
+	e.Write([]byte(tfs))
 
 	if stt := e.ReadFixedString(10); stt != "testing" {
 		t.Fatal(name, "invalid fixed string: "+stt, spew.Sdump([]byte(stt)))
@@ -272,6 +273,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	str := e.ReadRemainder()
 	cap := strings.TrimRight(string(str), "\x00")
 	if cap != tfs {
+		fmt.Println(spew.Sdump([]byte(tfs)))
 		t.Fatal(name, "Invalid string '"+cap+"'", spew.Sdump(str))
 	}
 
@@ -414,11 +416,16 @@ func TestReflection(t *testing.T) {
 }
 
 func TestWindowsPlatform(t *testing.T) {
-	// MSYS-style paths must be parsed correctly
-	src := "/c/Windows/System32/"
+	check := func(t *testing.T, path string, shouldEqual Path) {
+		prs := parseWinPath([]rune(path))
+		if !reflect.DeepEqual(prs, shouldEqual) {
+			t.Fatal("error parsing", path, spew.Sdump([]string(prs)))
+		}
+	}
 
-	path := ParseSystemPath(src)
-	fmt.Println(spew.Sdump([]string(path)))
+	// MSYS-style paths must be parsed correctly
+	check(t, "/c/Windows/System32/", Path{"...", "C", "Windows", "System32"})
+	check(t, "D:/WeirdPath/Includes Spaces and Forward Slash/", Path{"...", "D", "WeirdPath", "Includes Spaces and Forward Slash"})
 }
 
 // func TestDir(t *testing.T) {

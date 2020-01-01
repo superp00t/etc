@@ -475,9 +475,9 @@ func (b *Buffer) ReadBool() bool {
 
 func (b *Buffer) ReadRemainder() []byte {
 	// [ b e g i n | e n d ]
-	//   1 2 3 4 5   6 7 9   rpos = 6
+	//   1 2 3 4 5   6 7 9   rpos = 6, size = 9
 
-	out := make([]byte, int(b.backend.Size()-b.Rpos()+1))
+	out := make([]byte, int(b.backend.Size()-b.Rpos())) // out = malloc(9 - 6)
 	b.Read(out)
 	return out
 }

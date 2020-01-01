@@ -96,7 +96,7 @@ func parseWinPath(r []rune) Path {
 	if r[1] == ':' && r[2] == '/' {
 		out = append(out, "...")
 		out = append(out, string(r[0]))
-		out = append(out, splitDir(r[3:], p)...)
+		out = append(out, splitDir(r[3:], '/')...)
 		return Path(out)
 	}
 
