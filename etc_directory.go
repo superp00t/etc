@@ -72,7 +72,11 @@ func parseWinPath(r []rune) Path {
 	}
 
 	if len(r) <= 1 {
-		panic(string(r))
+		if len(r) == 0 {
+			return Path{}
+		}
+
+		return Path{string(r)}
 	}
 
 	// MSYS-style path?

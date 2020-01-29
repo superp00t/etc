@@ -16,7 +16,7 @@ var (
 func ParseSystemPath(s string) Path {
 	if s == "" {
 		wd, _ := os.Getwd()
-		return parseWinPath(wd)
+		return parseWinPath([]rune(wd))
 	}
 	return parseWinPath([]rune(s))
 }
