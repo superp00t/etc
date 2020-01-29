@@ -3,6 +3,7 @@
 package etc
 
 import (
+	"os"
 	"syscall"
 	"unsafe"
 )
@@ -13,6 +14,10 @@ var (
 )
 
 func ParseSystemPath(s string) Path {
+	if s == "" {
+		wd, _ := os.Getwd()
+		return parseWinPath(wd)
+	}
 	return parseWinPath([]rune(s))
 }
 

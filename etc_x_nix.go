@@ -8,6 +8,11 @@ import (
 )
 
 func ParseSystemPath(s string) Path {
+	if s == "" {
+		wd, _ := os.Getwd()
+		return parseNixPath(wd)
+	}
+
 	return parseNixPath([]rune(s))
 }
 
