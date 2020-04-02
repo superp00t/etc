@@ -18,6 +18,13 @@ var (
 	f *FlagParser
 )
 
+func init() {
+	f = new(FlagParser)
+	f.Defs = make(map[string]*Def)
+	f.Routines = make(map[string]*Routine)
+	f.Defs["y"] = &Def{Int64, "yo_level", "log level", int64(0)}
+}
+
 type Type int
 
 const (
@@ -263,50 +270,28 @@ flagend:
 	return nil
 }
 
-func setup(s, l string) {
-	if s == "h" || l == "help" {
-		panic("You cannot override the help flags")
-	}
-
-	if s == "y" || l == "yo_level" {
-		panic("You can't overwrite the yo log level flags")
-	}
-
-	if f == nil {
-		f = new(FlagParser)
-		f.Defs = make(map[string]*Def)
-		f.Routines = make(map[string]*Routine)
-	}
-}
-
 func FSpew() {
-	setup("", "")
 	fmt.Println(spew.Sdump(f))
 }
 
 // Boolf cannot be true by default.
 func Boolf(short, long, description string) {
-	setup(short, long)
 	f.Defs[short] = &Def{Bool, long, description, false}
 }
 
 func Durationf(short, long, description string, t time.Duration) {
-	setup(short, long)
 	f.Defs[short] = &Def{Duration, long, description, t}
 }
 
 func Int64f(short, long, description string, def int64) {
-	setup(short, long)
 	f.Defs[short] = &Def{Int64, long, description, def}
 }
 
 func Float64f(short, long, description string, def float64) {
-	setup(short, long)
 	f.Defs[short] = &Def{Float64, long, description, def}
 }
 
 func Stringf(short, long, description, def string) {
-	setup(short, long)
 	f.Defs[short] = &Def{String, long, description, def}
 }
 
@@ -341,8 +326,6 @@ func GetExe() string {
 }
 
 func Init() {
-	setup("", "")
-
 	f.Defs["y"] = &Def{Int64, "yo_level", "log level", int64(0)}
 	f.Defs["h"] = &Def{Bool, "help", "prints this message", false}
 
@@ -391,8 +374,6 @@ func Init() {
 }
 
 func AddSubroutine(name string, arguments []string, description string, fn func([]string)) {
-	setup("", "")
-
 	if name == "help" {
 		panic("Cannot override help function")
 	}
