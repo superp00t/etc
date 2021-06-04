@@ -33,24 +33,12 @@ func (d *dummyWriter) Read(b []byte) (int, error) {
 	return 0, fmt.Errorf("cannot read from dummy writer")
 }
 
-func (d *dummyWriter) Flush() error {
-	return fmt.Errorf("cannot flush dummy writer")
+func (d *dummyWriter) Erase() error {
+	return fmt.Errorf("cannot erase dummy writer")
 }
 
-func (d *dummyWriter) Seek(v int64) {
-	panic("cannot seek dummy writer")
-}
-
-func (d *dummyWriter) SeekW(v int64) {
-	panic("cannot seek dummy writer")
-}
-
-func (d *dummyWriter) Wpos() int64 {
-	return 0
-}
-
-func (d *dummyWriter) Rpos() int64 {
-	panic("cannot get read position in dummy writer")
+func (d *dummyWriter) Seek(offset int64, whence int) (int64, error) {
+	return 0, fmt.Errorf("cannot seek dummy writer")
 }
 
 func (d *dummyWriter) Bytes() []byte {

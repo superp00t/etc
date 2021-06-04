@@ -61,11 +61,13 @@ func TestBuffer(t *testing.T) {
 	g.WriteUint(16428)
 	g.WriteUint(148)
 
-	fmt.Println(g.Rpos())
+	g.Start()
+
+	fmt.Println(g.Pos())
 	ten := g.ReadUint()
-	fmt.Println(g.Rpos())
+	fmt.Println(g.Pos())
 	fifty := g.ReadUint()
-	fmt.Println(g.Rpos())
+	fmt.Println(g.Pos())
 	fourteen := g.ReadUint()
 
 	if ten != 10 {
@@ -193,7 +195,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	e.WriteInvertedString(4, "x86")
 
 	for _, v := range strs {
-		e.WriteUTF8(v)
+		e.WriteUString(v)
 	}
 
 	u, _ := ParseUUID("123e4567-e89b-12d3-a456-426655440000")
@@ -203,11 +205,15 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	tfs := "testing some freaking strings"
 	e.Write([]byte(tfs))
 
+	e.Start()
+
+	fmt.Println(name, "pos before fix string", e.Pos())
+
 	if stt := e.ReadFixedString(10); stt != "testing" {
 		t.Fatal(name, "invalid fixed string: "+stt, spew.Sdump([]byte(stt)))
 	}
 
-	fmt.Println(e.Rpos(), e.backend.Size(), spew.Sdump(e.Bytes()))
+	fmt.Println("pos after fix string", e.Pos(), e.backend.Size(), spew.Sdump(e.Bytes()))
 	for i := 0; i < len(testdata); i++ {
 		ca := e.ReadUint()
 		if testdata[i] != ca {
@@ -259,7 +265,7 @@ func buffertest(name string, e *Buffer, t *testing.T) {
 	}
 
 	for i := 0; i < len(strs); i++ {
-		s := e.ReadUTF8()
+		s := e.ReadUString()
 		if s != strs[i] {
 			t.Fatal(name, "mismatch with", strs[i], "(got ", s, ")")
 		}
@@ -390,7 +396,7 @@ func TestReflection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println("UNMARSHAL")
+	fmt.Println("UNMARSHAL(", spew.Sdump(b), ")")
 
 	var tr2 TestRecord
 	err = Unmarshal(b, &tr2)
@@ -413,6 +419,60 @@ func TestReflection(t *testing.T) {
 	}
 
 	fmt.Println("fixed =>", spew.Sdump(fixed))
+
+	bits := NewBuffer()
+	bits.WriteMSBit(true)
+	bits.WriteMSBit(true)
+	bits.WriteMSBit(false)
+	bits.WriteMSBit(true)
+	bits.FlushBits()
+
+	shouldBe := uint8(1<<7) | uint8(1<<6) | uint8(1<<4)
+
+	if bits.Bytes()[0] != shouldBe {
+		t.Fatal("Bits are", bits.Bytes()[0], "should be", shouldBe)
+	}
+
+	bits.Start()
+	idx := 0
+	assert := func(i, j bool) {
+		if i != j {
+			t.Fatal("bit error at", idx, "is", i, "should be", j)
+		}
+		idx++
+	}
+
+	assert(bits.ReadMSBit(), true)
+	assert(bits.ReadMSBit(), true)
+	assert(bits.ReadMSBit(), false)
+	assert(bits.ReadMSBit(), true)
+
+	fmt.Println(spew.Sdump(bits.Bytes()))
+
+	lsb := NewBuffer()
+	lsb.WriteLSBit(true)
+	lsb.WriteLSBit(false)
+	lsb.WriteLSBit(false)
+	lsb.WriteLSBit(true)
+	lsb.WriteLSBit(true)
+	lsb.WriteLSBit(true)
+	lsb.WriteLSBit(true)
+	lsb.WriteLSBit(false)
+	lsb.FlushBits()
+	lsb.Start()
+	idx = 0
+
+	fmt.Println(spew.Sdump(lsb.Bytes()))
+
+	assert(lsb.ReadLSBit(), true)
+	assert(lsb.ReadLSBit(), false)
+	assert(lsb.ReadLSBit(), false)
+	assert(lsb.ReadLSBit(), true)
+	assert(lsb.ReadLSBit(), true)
+	assert(lsb.ReadLSBit(), true)
+	assert(lsb.ReadLSBit(), true)
+	assert(lsb.ReadLSBit(), false)
+
 }
 
 func TestWindowsPlatform(t *testing.T) {

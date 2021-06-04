@@ -71,7 +71,7 @@ func (b *Buffer) ReadInvertedString(l int) string {
 }
 
 func (b *Buffer) Available() int {
-	return b.Len() - int(b.backend.Rpos())
+	return b.Len() - int(b.Pos())
 }
 
 func (b *Buffer) String() string {
@@ -89,24 +89,22 @@ func (b *Buffer) String() string {
 	return "(non-UTF8 string)"
 }
 
-func (b *Buffer) SeekW(offset int64) {
-	b.backend.SeekW(offset)
+func (b *Buffer) Seek(offset int64, whence int) (int64, error) {
+	return b.backend.Seek(offset, whence)
 }
 
-func (b *Buffer) SeekR(offset int64) {
-	b.Seek(offset)
+func (b *Buffer) Start() {
+	if _, err := b.Seek(0, io.SeekStart); err != nil {
+		panic(err)
+	}
 }
 
-func (b *Buffer) Seek(offset int64) {
-	b.backend.Seek(offset)
-}
-
-func (b *Buffer) Rpos() int64 {
-	return b.backend.Rpos()
-}
-
-func (b *Buffer) Wpos() int64 {
-	return b.backend.Wpos()
+func (b *Buffer) Pos() int64 {
+	pos, err := b.backend.Seek(0, io.SeekCurrent)
+	if err != nil {
+		panic(err)
+	}
+	return pos
 }
 
 func (b *Buffer) ReadByte() uint8 {
@@ -280,10 +278,10 @@ func (b *Buffer) ReadFloat64() float64 {
 }
 
 func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
-	rpos := b.Rpos()
-	b.SeekR(off)
+	rpos := b.Pos()
+	b.Seek(rpos, io.SeekStart)
 	i, err := b.Read(p)
-	b.SeekR(rpos)
+	b.Seek(rpos, io.SeekStart)
 	return i, err
 }
 
@@ -294,25 +292,25 @@ func (b *Buffer) Find(str []byte) (int64, error) {
 	var scanBuf = make([]byte, len(str))
 
 	for {
-		pos := b.Rpos()
+		pos := b.Pos()
 
 		i, err := b.Read(dat[:])
 		if err != nil && err != io.EOF {
 			return 0, err
 		}
 
-		npos := b.Rpos()
+		npos := b.Pos()
 
 		for x := 0; x < i; x++ {
 			u := dat[x]
 
 			if u == str[0] {
-				b.SeekR(pos + int64(x))
+				b.Seek(pos+int64(x), io.SeekStart)
 				b.Read(scanBuf)
 				if bytes.Equal(scanBuf, str) {
 					return pos + int64(x), nil
 				} else {
-					b.SeekR(npos)
+					b.Seek(npos, io.SeekStart)
 				}
 			}
 		}
@@ -373,7 +371,7 @@ func (b *Buffer) ReadUntilToken(s string) (string, error) {
 				tmp = append(tmp, ct...)
 				continue
 			} else {
-				b.SeekR(b.Rpos() - 1)
+				b.Seek(b.Pos()-1, io.SeekStart)
 				return string(tmp), nil
 			}
 		} else {
@@ -477,29 +475,17 @@ func (b *Buffer) ReadRemainder() []byte {
 	// [ b e g i n | e n d ]
 	//   1 2 3 4 5   6 7 9   rpos = 6, size = 9
 
-	out := make([]byte, int(b.backend.Size()-b.Rpos())) // out = malloc(9 - 6)
+	out := make([]byte, int(b.backend.Size()-b.Pos())) // out = malloc(9 - 6)
 	b.Read(out)
 	return out
 }
 
 func (b *Buffer) ReadFixedString(i int) string {
 	by := make([]byte, i)
-	b.Read(by)
+	if _, err := b.Read(by); err != nil {
+		fmt.Println("ReadFixedString", err)
+	}
 	return strings.TrimRight(string(by), "\x00")
-}
-
-func (b *Buffer) ReadUTF8() string {
-	length := b.ReadUint()
-	if length == 0 {
-		return ""
-	}
-
-	e := b.ReadBytes(int(length))
-	if !validateUTF8(e) {
-		return ""
-	}
-
-	return string(e)
 }
 
 func (b *Buffer) ReadBoxNonce() *[24]byte {

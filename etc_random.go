@@ -2,29 +2,21 @@ package etc
 
 import (
 	"crypto/rand"
+	"io"
 	"math/big"
 	"reflect"
 	"time"
 )
 
 func GenerateRandomUUID() UUID {
-	by := NewBuffer()
-	by.WriteRandom(16)
-
-	part1 := by.ReadBigUint64()
-	part2 := by.ReadBigUint64()
-
-	gu := UUID{part1, part2}
-	str := []rune(gu.String())
-
-	str[14] = '4'
-	str[19] = '8'
-
-	pr, err := ParseUUID(string(str))
+	var uuid UUID
+	_, err := io.ReadFull(rand.Reader, uuid[:])
 	if err != nil {
-		panic(err)
+		return NullUUID
 	}
-	return pr
+	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
+	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
+	return uuid
 }
 
 //Random random intergers

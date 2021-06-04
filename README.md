@@ -2,11 +2,9 @@
 
 [![license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Etc is a binary encoding system. It aims to be extremely fast, efficient and easy to use.
+Etc is a low-level binary encoding package.
 
-It's comparable to Python's "struct" module. You could also compare it to Protobuf, although Etc does not provide version constructs, and will break if you change the schema and try to decode old data.
-
-[Etc in Rust](https://github.com/superp00t/etc-rs)
+It's similar to package [bytes] with some extra bells and whistles.
 
 [Etc in JavaScript](https://github.com/superp00t/etc-js)
 
@@ -99,12 +97,3 @@ e.Base64() // dGVzdM7C8QU= (url encoding)
            //   t     e     s     t     [    12345678 (LEB128) ]
 e.Bytes()  // [ 0x74, 0x65, 0x73, 0x74, 0xce, 0xc2, 0xf1, 0x05 ]
 ```
-
-## EtcSchema (work in progress)
-EtcSchema draws heavy inspiration from Google's Protocol Buffers & gRPC. It uses a sequential encoding and decoding system, in lieu of textual syntax: you just read/write one type, and then move on to the next. 
-
-*Etc is unstable and **not** production ready, so proceed with caution.*
-
-`etc.Buffer` is similar to `bytes.Buffer`, but with number and string methods so you don't have to manually type in `encoding/binary` functions.
-
-it is intended to be fault-tolerant, and as such does not return errors for most reading and writing functions.

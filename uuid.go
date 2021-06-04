@@ -1,22 +1,17 @@
 package etc
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"regexp"
 	"strings"
-	"time"
 )
 
-type UUID [2]uint64
+type UUID [16]byte
 
-var UUID_NULL UUID = UUID{0, 0}
-
-func (g UUID) Big() *big.Int {
-	return big.NewInt(0).SetBytes(g.Bytes())
-}
+var NullUUID UUID
 
 func (g UUID) MarshalJSON() ([]byte, error) {
 	b := NewBuffer()
@@ -39,7 +34,7 @@ func (g UUID) UnmarshalYAML(b interface{}) error {
 }
 
 func (g UUID) UnmarshalJSON(b []byte) error {
-	bt := MkBuffer(b)
+	bt := FromBytes(b)
 	bt.ReadByte()
 	uidStr := string(bt.ReadBytes(36))
 	pu, err := ParseUUID(uidStr)
@@ -53,28 +48,21 @@ func (g UUID) UnmarshalJSON(b []byte) error {
 }
 
 func (e *Buffer) WriteUUID(g UUID) {
-	e.WriteUint64(g[0])
-	e.WriteUint64(g[1])
+	e.Write(g[:])
 }
 
 func (e *Buffer) ReadUUID() UUID {
-	g := UUID{
-		e.ReadUint64(),
-		e.ReadUint64(),
-	}
-
+	var g UUID
+	e.Read(g[:])
 	return g
 }
 
 func (g UUID) Bytes() []byte {
-	return append(
-		p64(g[0]),
-		p64(g[1])...,
-	)
+	return []byte(g[:])
 }
 
 func (g UUID) Cmp(u UUID) bool {
-	return g[0] == u[0] && g[1] == u[1]
+	return bytes.Equal(g[:], u[:])
 }
 
 func (g UUID) String() string {
@@ -86,36 +74,6 @@ func (g UUID) String() string {
 		d[12:16],
 		d[16:20],
 		d[20:32])
-}
-
-func (g UUID) TimeStitch() uint64 {
-	return (uint64(g.Get_time_low()) | uint64(g.Get_time_mid())>>32 | uint64(g.Get_time_hi_and_version())&0xFF>>34)
-}
-
-func (g UUID) Time() time.Time {
-	prec := g.TimeStitch() * 100
-
-	return time.Unix(0, int64(prec)).Add(12219292800 * time.Millisecond)
-}
-
-func (g UUID) Get_time_low() uint32 {
-	return uint32(g[0] & 0xFFFFFFFF)
-}
-
-func (g UUID) Get_time_mid() uint16 {
-	return uint16((g[0] >> 32) & 0xFFFF)
-}
-
-func (g UUID) Get_time_hi_and_version() uint16 {
-	return uint16((g[0] >> 48) & 0xFFFF)
-}
-
-func (g UUID) Get_clock_seq_hi_and_res_clock_seq_low() uint16 {
-	return uint16(g[1] & 0xFFFF)
-}
-
-func (g UUID) Get_node() uint64 {
-	return uint64(g[1] >> 16)
 }
 
 func p64(i uint64) []byte {
@@ -136,26 +94,15 @@ func ParseUUID(s string) (UUID, error) {
 	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
 	ok := r.MatchString(s)
 	if !ok {
-		return UUID_NULL, fmt.Errorf("etc: invalid UUID '%s'", s)
+		return NullUUID, fmt.Errorf("etc: invalid UUID '%s'", s)
 	}
 
-	chrs := strings.Split(s, "-")
-	time_low := l64(chrs[0])[:4]
-	time_mid := l64(chrs[1])[:2]
-	time_hi_and_version := l64(chrs[2])[:2]
-	clock_seq_hi_and_reserved_clock_seq_low := l64(chrs[3])[:2]
-	node := l64(chrs[4])[:6]
+	bytes := []byte(strings.ReplaceAll(s, "-", ""))
 
-	data := NewBuffer()
-	data.Write(time_low)
-	data.Write(time_mid)
-	data.Write(time_hi_and_version)
-	part1 := data.ReadUint64()
+	var u UUID
+	if _, err := hex.Decode(u[:], bytes); err != nil {
+		return u, nil
+	}
 
-	data = NewBuffer()
-	data.Write(clock_seq_hi_and_reserved_clock_seq_low)
-	data.Write(node)
-	part2 := data.ReadUint64()
-
-	return UUID{part1, part2}, nil
+	return u, nil
 }

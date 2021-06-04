@@ -20,10 +20,6 @@ func reverseString(s string) string {
 	return string(runes)
 }
 
-func (b *Buffer) WriteUString(s string) {
-	b.WriteUTF8(s)
-}
-
 func (b *Buffer) WriteInvertedString(l int, s string) {
 	v := reverseString(s)
 	b.WriteFixedString(l, v)
@@ -213,10 +209,10 @@ func (b *Buffer) WriteBigInt(v *big.Int) {
 }
 
 func (b *Buffer) WriteAt(p []byte, off int64) (int, error) {
-	wpos := b.Wpos()
-	b.SeekW(off)
+	wpos := b.Pos()
+	b.Seek(off, io.SeekStart)
 	i, err := b.Write(p)
-	b.SeekR(wpos)
+	b.Seek(wpos, io.SeekStart)
 	return i, err
 }
 
@@ -250,16 +246,16 @@ func (b *Buffer) WriteFixedString(i int, v string) {
 }
 
 func (b *Buffer) Jump(offset int64) {
-	o := b.Rpos()
-	b.Seek(o + offset)
+	o := b.Pos()
+	b.Seek(o+offset, io.SeekStart)
 }
 
 func (b *Buffer) Reverse(offset int64) {
-	o := b.Rpos()
-	b.Seek(o - offset)
+	o := b.Pos()
+	b.Seek(o-offset, io.SeekStart)
 }
 
-func (b *Buffer) WriteUTF8(u string) {
+func (b *Buffer) WriteUString(u string) {
 	data := []byte(u)
 	length := len(data)
 

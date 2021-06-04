@@ -13,7 +13,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	if g.String() != ex {
-		t.Fatal("UUID string mismatch")
+		t.Fatal("UUID string mismatch", g.String(), ex)
 	}
 
 	fmt.Println(g.String())

@@ -212,7 +212,7 @@ func (d Path) DiskUsed() uint64 {
 func (d Path) Put(path string, data io.Reader) error {
 	e, err := d.Get(path)
 	if err == nil {
-		e.Flush()
+		e.Erase()
 	} else {
 		return err
 	}

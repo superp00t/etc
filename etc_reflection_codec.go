@@ -317,7 +317,7 @@ func (d *Decoder) Decode(v interface{}) error {
 			sz := int(d.ReadUint())
 			slice := reflect.MakeSlice(object.Elem().Type(), sz, sz)
 			object.Elem().Set(slice)
-			constructor := slice.Index(0).Type()
+			constructor := object.Type().Elem().Elem()
 			for i := 0; i < int(sz); i++ {
 				out := reflect.New(constructor)
 				err := d.Decode(out.Interface())
