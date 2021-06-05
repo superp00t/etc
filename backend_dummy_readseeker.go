@@ -12,7 +12,6 @@ type dummyReadSeeker struct {
 func DummyReadSeeker(r io.ReadSeeker) *Buffer {
 	dr := &dummyReadSeeker{
 		r,
-		0,
 	}
 
 	e := NewBuffer()

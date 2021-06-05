@@ -4,7 +4,7 @@
 
 Etc is a low-level binary encoding package.
 
-It's similar to package [https://golang.org/pkg/bytes/](bytes) with some extra bells and whistles.
+It's similar to package [bytes](https://golang.org/pkg/bytes/) with some extra bells and whistles.
 
 [Etc in JavaScript](https://github.com/superp00t/etc-js)
 
