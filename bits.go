@@ -24,14 +24,22 @@ func (b *Buffer) WriteMSBit(bit bool) {
 	}
 }
 
-func (b *Buffer) FlushBits() {
+func (b *Buffer) FlushReadBits() {
 	b.tmpBitsRead = 0
 	b.tmpBitsReadOfs = 8
+}
+
+func (b *Buffer) FlushWriteBits() {
 	if b.tmpBitsWriteOfs < 8 {
 		b.WriteByte(b.tmpBitsWrite)
 	}
 	b.tmpBitsWrite = 0
 	b.tmpBitsWriteOfs = 8
+}
+
+func (b *Buffer) FlushBits() {
+	b.FlushReadBits()
+	b.FlushWriteBits()
 }
 
 func (b *Buffer) ReadLSBit() bool {

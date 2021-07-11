@@ -118,6 +118,7 @@ func (b *Buffer) Len() int {
 }
 
 func (b *Buffer) Read(buf []byte) (int, error) {
+	b.FlushReadBits()
 	return b.backend.Read(buf)
 }
 

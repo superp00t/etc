@@ -30,6 +30,7 @@ func (b *Buffer) WriteByte(v uint8) {
 }
 
 func (b *Buffer) Write(buf []byte) (int, error) {
+	b.FlushWriteBits()
 	return b.backend.Write(buf)
 }
 

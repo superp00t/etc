@@ -173,7 +173,7 @@ func (f *FlagParser) Parse(s string) error {
 
 	for {
 	cont:
-		g := e.Rpos()
+		g := e.Pos()
 		chr, _, err := e.ReadRune()
 		if err != nil {
 			goto flagend
@@ -260,7 +260,7 @@ func (f *FlagParser) Parse(s string) error {
 
 			goto cont
 		} else {
-			e.SeekR(g)
+			e.Seek(g, io.SeekStart)
 			f.Called = append(f.Called, getValue(e))
 			goto cont
 		}
